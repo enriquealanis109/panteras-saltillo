@@ -29,8 +29,8 @@ export default function Footer() {
               </div>
               <div className="flex gap-2">
                 <span>📱</span>
-                <a href="https://wa.me/528445028582" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">
-                  844 502 8582
+                <a href="https://wa.me/528445428446" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">
+                  844 542 8446
                 </a>
               </div>
             </div>
@@ -63,7 +63,7 @@ export default function Footer() {
                 Panteras Saltillo en Facebook
               </a>
               <a
-                href="https://wa.me/528445028582"
+                href="https://wa.me/528445428446"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center gap-2 bg-green-600/10 border border-green-600/20 text-green-500 hover:bg-green-600/20 px-4 py-2 rounded-lg transition-all duration-200 text-sm font-medium mt-2 w-fit group"

@@ -31,24 +31,21 @@ export default function RegistrationForm() {
     e.preventDefault();
     setLoading(true);
 
-    try {
-      const res = await fetch("/api/register", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
-      });
+    const msg = encodeURIComponent(
+      `Hola! Me interesa inscribir a mi hijo en Panteras Saltillo 🐆\n\n` +
+      `👨‍👦 Padre/Madre: ${formData.parentName}\n` +
+      `⚽ Jugador: ${formData.childName}\n` +
+      `🎂 Edad: ${formData.age} años\n` +
+      `📋 Categoría: ${formData.category}\n` +
+      `📱 Teléfono: ${formData.phone}`
+    );
 
-      if (res.ok) {
-        setSubmitted(true);
-        toast.success("¡Registro enviado! Te contactamos pronto.");
-      } else {
-        throw new Error("Error en el registro");
-      }
-    } catch {
-      toast.error("Algo salió mal. Intenta de nuevo.");
-    } finally {
-      setLoading(false);
-    }
+    setSubmitted(true);
+    setTimeout(() => {
+      window.open(`https://wa.me/528445428446?text=${msg}`, "_blank");
+    }, 800);
+
+    setLoading(false);
   };
 
   if (submitted) {
