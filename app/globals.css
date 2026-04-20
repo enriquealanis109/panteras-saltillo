@@ -1,0 +1,78 @@
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap");
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+* {
+  scroll-behavior: smooth;
+}
+
+body {
+  background-color: #0a0a0a;
+  color: white;
+  font-family: "Inter", sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+@layer components {
+  .btn-primary {
+    @apply bg-pantera-green hover:bg-pantera-green-dark text-white font-bold py-4 px-8 rounded-xl transition-all duration-200 transform hover:scale-105 active:scale-95 shadow-lg shadow-green-900/30;
+  }
+  .btn-outline {
+    @apply border-2 border-pantera-green text-pantera-green hover:bg-pantera-green hover:text-white font-bold py-4 px-8 rounded-xl transition-all duration-200;
+  }
+  .section-title {
+    @apply text-3xl md:text-5xl font-black text-white leading-tight;
+  }
+  .section-subtitle {
+    @apply text-gray-400 text-lg md:text-xl leading-relaxed;
+  }
+  .card {
+    @apply bg-pantera-gray-light border border-white/5 rounded-2xl p-6 md:p-8;
+  }
+  .input-field {
+    @apply w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-pantera-green focus:ring-1 focus:ring-pantera-green transition-all duration-200;
+  }
+
+  /* Scroll animation base states */
+  .fade-up {
+    opacity: 0;
+    transform: translateY(48px) scale(0.97);
+    filter: blur(4px);
+    transition: opacity 0.75s cubic-bezier(0.22, 1, 0.36, 1),
+                transform 0.75s cubic-bezier(0.22, 1, 0.36, 1),
+                filter 0.6s ease;
+  }
+  .fade-up.in-view {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: blur(0);
+  }
+  .fade-left {
+    opacity: 0;
+    transform: translateX(-48px) scale(0.97);
+    filter: blur(4px);
+    transition: opacity 0.75s cubic-bezier(0.22, 1, 0.36, 1),
+                transform 0.75s cubic-bezier(0.22, 1, 0.36, 1),
+                filter 0.6s ease;
+  }
+  .fade-left.in-view {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+    filter: blur(0);
+  }
+  .fade-right {
+    opacity: 0;
+    transform: translateX(48px) scale(0.97);
+    filter: blur(4px);
+    transition: opacity 0.75s cubic-bezier(0.22, 1, 0.36, 1),
+                transform 0.75s cubic-bezier(0.22, 1, 0.36, 1),
+                filter 0.6s ease;
+  }
+  .fade-right.in-view {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+    filter: blur(0);
+  }
+}
