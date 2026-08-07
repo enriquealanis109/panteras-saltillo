@@ -2,57 +2,106 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 
+const LETTERS = ["P","A","N","T","E","R","A","S"];
+
 export default function PageLoader() {
-  const [visible, setVisible] = useState(true);
-  const [fadeOut, setFadeOut] = useState(false);
+  const [visible,  setVisible]  = useState(true);
+  const [fadeOut,  setFadeOut]  = useState(false);
 
   useEffect(() => {
-    const timer = setTimeout(() => setFadeOut(true), 1800);
-    const hide = setTimeout(() => setVisible(false), 2300);
-    return () => { clearTimeout(timer); clearTimeout(hide); };
+    const t1 = setTimeout(() => setFadeOut(true),  2000);
+    const t2 = setTimeout(() => setVisible(false), 2500);
+    return () => { clearTimeout(t1); clearTimeout(t2); };
   }, []);
 
   if (!visible) return null;
 
   return (
-    <div
-      className={`fixed inset-0 z-[100] flex flex-col items-center justify-center bg-black transition-opacity duration-500 ${
-        fadeOut ? "opacity-0" : "opacity-100"
-      }`}
-    >
-      {/* Logo animado */}
-      <div className="relative flex items-center justify-center mb-6">
-        {/* Anillo giratorio */}
-        <div className="absolute w-36 h-36 rounded-full border-2 border-pantera-green/20 border-t-pantera-green animate-spin" />
-        <div className="absolute w-28 h-28 rounded-full border border-pantera-green/10 border-b-pantera-green/40 animate-spin" style={{ animationDirection: "reverse", animationDuration: "1.5s" }} />
+    <div className={`fixed inset-0 z-[100] flex flex-col items-center justify-center bg-black transition-opacity duration-500 ${fadeOut ? "opacity-0" : "opacity-100"}`}>
+
+      {/* Flash verde radial al inicio */}
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          background: "radial-gradient(circle at center, rgba(22,163,74,0.38) 0%, transparent 65%)",
+          animation: "flashFade 1.1s ease-out forwards",
+        }}
+      />
+
+      {/* Logo con drop + bounce */}
+      <div
+        className="relative z-10 mb-5"
+        style={{ animation: "logoDrop 0.45s cubic-bezier(0.34,1.56,0.64,1) 0.1s both" }}
+      >
         <Image
           src="/c0810c3f-4795-4374-909f-79abe32eb3bd.jpeg"
-          alt="Panteras FC"
-          width={88}
-          height={88}
-          className="rounded-full z-10"
+          alt="Panteras Saltillo"
+          width={92}
+          height={92}
+          className="rounded-full"
+          priority
         />
       </div>
 
-      {/* Nombre */}
-      <div className="text-center">
-        <p className="text-2xl font-black text-white tracking-widest">
-          PANTERAS <span className="text-pantera-green">SALTILLO</span>
-        </p>
-        <p className="text-gray-600 text-xs mt-1 tracking-widest uppercase">
-          Formación y Fútbol Saltillo
-        </p>
+      {/* PANTERAS — cada letra entra con stagger */}
+      <div className="flex items-center gap-[2px] z-10 mb-1">
+        {LETTERS.map((l, i) => (
+          <span
+            key={i}
+            className="text-[30px] font-black text-white leading-none"
+            style={{
+              fontFamily: "Syne, sans-serif",
+              animation: `letterUp 0.35s ease-out ${0.28 + i * 0.045}s both`,
+            }}
+          >
+            {l}
+          </span>
+        ))}
       </div>
 
+      {/* SALTILLO desliza desde la derecha */}
+      <p
+        className="text-pantera-green font-bold text-[11px] tracking-[0.5em] z-10 mb-8"
+        style={{ animation: "slideIn 0.4s ease-out 0.7s both" }}
+      >
+        SALTILLO
+      </p>
+
       {/* Barra de progreso */}
-      <div className="mt-8 w-40 h-0.5 bg-white/5 rounded-full overflow-hidden">
-        <div className="h-full bg-pantera-green rounded-full animate-[progress_1.8s_ease-in-out_forwards]" />
+      <div
+        className="w-28 h-[2px] bg-white/[0.06] rounded-full overflow-hidden z-10"
+        style={{ animation: "fadeIn 0.3s ease-out 0.45s both" }}
+      >
+        <div
+          className="h-full bg-pantera-green rounded-full"
+          style={{ animation: "progress 1.7s cubic-bezier(0.4,0,0.2,1) 0.45s both" }}
+        />
       </div>
 
       <style jsx>{`
+        @keyframes flashFade {
+          from { opacity: 1; }
+          to   { opacity: 0; }
+        }
+        @keyframes logoDrop {
+          from { opacity: 0; transform: translateY(-32px) scale(0.82); }
+          to   { opacity: 1; transform: translateY(0)     scale(1);    }
+        }
+        @keyframes letterUp {
+          from { opacity: 0; transform: translateY(18px); }
+          to   { opacity: 1; transform: translateY(0);    }
+        }
+        @keyframes slideIn {
+          from { opacity: 0; transform: translateX(14px); }
+          to   { opacity: 1; transform: translateX(0);    }
+        }
+        @keyframes fadeIn {
+          from { opacity: 0; }
+          to   { opacity: 1; }
+        }
         @keyframes progress {
-          from { width: 0% }
-          to { width: 100% }
+          from { width: 0%;    }
+          to   { width: 100%;  }
         }
       `}</style>
     </div>

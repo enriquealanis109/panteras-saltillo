@@ -1,41 +1,212 @@
-@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=Space+Grotesk:wght@300;400;500;600;700&display=swap");
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+/* ── Variables de tema (oscuro por default, .light las sobreescribe) ──
+   Solo el sitio público y componentes compartidos las consumen por ahora;
+   el resto de la app sigue con sus colores fijos hasta convertirse.     */
+:root {
+  --bg-page: #0a0a0a;
+  --bg-surface-1: rgba(255,255,255,0.03);
+  --bg-surface-2: rgba(255,255,255,0.05);
+  --border-subtle: rgba(255,255,255,0.07);
+  --border-strong: rgba(255,255,255,0.14);
+  --text-primary: #ffffff;
+  --text-secondary: #9ca3af;
+  --text-muted: #b0b8c4;
+  --placeholder: #6b7280;
+  --scrollbar-track: #0a0a0a;
+  --scrollbar-thumb: #2a2a2a;
+  --scrollbar-thumb-hover: #3a3a3a;
+  --nav-overlay: rgba(0,0,0,0.8);
+  --nav-overlay-mobile: rgba(0,0,0,0.95);
+  --hero-tint: #0d1a10;
+  --hero-fade-edge: rgba(0,0,0,0.2);
+  --bg-alt: #111111;
+  --status-neutral: #9ca3af;
+  --status-good: #4ade80;
+}
+.light {
+  --bg-page: #ffffff;
+  --bg-surface-1: rgba(10,10,10,0.035);
+  --bg-surface-2: rgba(10,10,10,0.06);
+  --border-subtle: rgba(10,10,10,0.1);
+  --border-strong: rgba(10,10,10,0.18);
+  --text-primary: #0a0a0a;
+  --text-secondary: #4b5563;
+  --text-muted: #6b7280;
+  --placeholder: #9ca3af;
+  --scrollbar-track: #f1f1f1;
+  --scrollbar-thumb: #cfcfcf;
+  --scrollbar-thumb-hover: #b5b5b5;
+  --nav-overlay: rgba(255,255,255,0.85);
+  --nav-overlay-mobile: rgba(255,255,255,0.97);
+  --hero-tint: #eaf7ec;
+  --hero-fade-edge: rgba(255,255,255,0.35);
+  --bg-alt: #f6f8f5;
+  --status-neutral: #0a0a0a;
+  --status-good: #15803d;
+}
+
 * {
   scroll-behavior: smooth;
+  box-sizing: border-box;
+  scrollbar-width: thin;
+  scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+}
+
+*::-webkit-scrollbar { width: 6px; height: 6px; }
+*::-webkit-scrollbar-track { background: var(--scrollbar-track); }
+*::-webkit-scrollbar-thumb { background: var(--scrollbar-thumb); border-radius: 99px; }
+*::-webkit-scrollbar-thumb:hover { background: var(--scrollbar-thumb-hover); }
+
+html, body {
+  overflow-x: hidden;
+  max-width: 100%;
 }
 
 body {
-  background-color: #0a0a0a;
-  color: white;
-  font-family: "Inter", sans-serif;
+  background-color: var(--bg-page);
+  color: var(--text-primary);
+  font-family: "Space Grotesk", sans-serif;
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  transition: background-color 0.25s ease, color 0.25s ease;
+}
+
+/* Noise grain texture */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  pointer-events: none;
+  opacity: 0.025;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+  background-size: 256px 256px;
+}
+
+/* ── Contraste mejorado para legibilidad ─────────────────
+   Los grises oscuros son casi invisibles sobre fondo negro.
+   Elevamos el piso de contraste en toda la app.          */
+.text-gray-700 { color: #9ca3af !important; }  /* era #374151 — casi invisible */
+.text-gray-600 { color: #9ca3af !important; }  /* era #4b5563 — muy tenue     */
+.text-gray-500 { color: #b0b8c4 !important; }  /* era #6b7280 — más legible   */
+
+/* Placeholders más visibles en inputs oscuros */
+input::placeholder,
+textarea::placeholder { color: #9ca3af !important; opacity: 1; }
+
+@keyframes float-sponsor {
+  0%, 100% { transform: translateY(0px); }
+  50%       { transform: translateY(-8px); }
+}
+
+@keyframes marquee {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+@keyframes cardSweep {
+  0%   { transform: translateX(-100%) skewX(-15deg); opacity: 0.6; }
+  100% { transform: translateX(250%)  skewX(-15deg); opacity: 0; }
 }
 
 @layer components {
   .btn-primary {
-    @apply bg-pantera-green hover:bg-pantera-green-dark text-white font-bold py-4 px-8 rounded-xl transition-all duration-200 transform hover:scale-105 active:scale-95 shadow-lg shadow-green-900/30;
+    @apply bg-pantera-green hover:bg-pantera-green-dark text-white font-semibold py-4 px-8 rounded-lg transition-all duration-300 transform hover:scale-[1.03] active:scale-95 shadow-lg shadow-green-900/30 tracking-wide;
   }
   .btn-outline {
-    @apply border-2 border-pantera-green text-pantera-green hover:bg-pantera-green hover:text-white font-bold py-4 px-8 rounded-xl transition-all duration-200;
+    @apply border border-white/20 text-white hover:border-pantera-green hover:text-pantera-green font-semibold py-4 px-8 rounded-lg transition-all duration-300 tracking-wide;
+  }
+  .section-label {
+    font-family: "Syne", sans-serif;
+    @apply text-xs uppercase tracking-[0.25em] text-pantera-green font-semibold;
   }
   .section-title {
-    @apply text-3xl md:text-5xl font-black text-white leading-tight;
+    font-family: "Syne", sans-serif;
+    @apply text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-white leading-[1.05] tracking-tight;
   }
   .section-subtitle {
-    @apply text-gray-400 text-lg md:text-xl leading-relaxed;
+    @apply text-gray-400 text-lg leading-relaxed font-light;
   }
   .card {
-    @apply bg-pantera-gray-light border border-white/5 rounded-2xl p-6 md:p-8;
+    @apply bg-white/[0.03] border border-white/[0.07] rounded-2xl p-6 md:p-8 backdrop-blur-sm;
   }
   .input-field {
-    @apply w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-pantera-green focus:ring-1 focus:ring-pantera-green transition-all duration-200;
+    font-family: "Space Grotesk", sans-serif;
+    @apply w-full bg-white/[0.04] border border-white/10 rounded-lg px-4 py-3 text-white placeholder-gray-600 focus:outline-none focus:border-pantera-green/60 focus:bg-white/[0.06] transition-all duration-200;
+  }
+  .section-line {
+    @apply w-12 h-px bg-pantera-green/60 mt-4 mb-6;
   }
 
-  /* Scroll animation base states */
+  /* Variantes conscientes de tema — usadas solo por el sitio público
+     y componentes compartidos ya convertidos. No reemplazan a las de
+     arriba: las páginas aún no convertidas siguen usando esas.       */
+  .btn-outline-theme {
+    @apply border font-semibold py-4 px-8 rounded-lg transition-all duration-300 tracking-wide hover:border-pantera-green hover:text-pantera-green;
+    border-color: var(--border-strong);
+    color: var(--text-primary);
+  }
+  .section-title-theme {
+    font-family: "Syne", sans-serif;
+    @apply text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold leading-[1.05] tracking-tight;
+    color: var(--text-primary);
+  }
+  .section-subtitle-theme {
+    @apply text-lg leading-relaxed font-light;
+    color: var(--text-secondary);
+  }
+  .card-theme {
+    @apply rounded-2xl p-6 md:p-8 backdrop-blur-sm border;
+    background: var(--bg-surface-1);
+    border-color: var(--border-subtle);
+  }
+  .input-theme {
+    font-family: "Space Grotesk", sans-serif;
+    @apply w-full rounded-lg px-4 py-3 focus:outline-none transition-all duration-200 border;
+    background: var(--bg-surface-2);
+    border-color: var(--border-strong);
+    color: var(--text-primary);
+  }
+  .input-theme::placeholder { color: var(--placeholder); }
+  .input-theme:focus { border-color: rgba(22,163,74,0.6); }
+  .link-muted-theme { color: var(--text-secondary); transition: color 0.2s; }
+  .link-muted-theme:hover { color: var(--text-primary); }
+
+  .marquee-track {
+    animation: marquee 28s linear infinite;
+    display: flex;
+    width: max-content;
+  }
+  .marquee-track:hover {
+    animation-play-state: paused;
+  }
+
+  .cat-card {
+    opacity: 0;
+    transform: translateY(24px);
+    transition: opacity 0.6s cubic-bezier(0.22, 1, 0.36, 1),
+                transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  .cat-card.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  .cat-card.visible::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.07), transparent);
+    animation: cardSweep 0.9s ease forwards;
+    pointer-events: none;
+    border-radius: inherit;
+  }
+
   .fade-up {
     opacity: 0;
     transform: translateY(48px) scale(0.97);

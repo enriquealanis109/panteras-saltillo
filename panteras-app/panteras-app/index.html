@@ -1,0 +1,948 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Panteras FC — Academy Management System</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/styles.css">
+<style>
+/* Extra inline styles for specific components */
+#notif-panel {
+  display:none; position:absolute; top:48px; right:0;
+  width:380px; background:var(--white);
+  border:1px solid var(--gray-200); border-radius:12px;
+  box-shadow:var(--shadow-lg); z-index:200; overflow:hidden;
+}
+.notif-panel-header {
+  padding:14px 16px; font-weight:700; font-size:14px;
+  border-bottom:1px solid var(--gray-200);
+  display:flex; align-items:center; justify-content:space-between;
+}
+.demo-banner {
+  background:linear-gradient(135deg, #1a56db, #7c3aed);
+  color:#fff; padding:10px 24px;
+  display:flex; align-items:center; gap:12px; font-size:13px;
+}
+.demo-banner strong { font-weight:700; }
+</style>
+</head>
+<body>
+
+<!-- DEMO ROLE SWITCHER BANNER -->
+<div class="demo-banner">
+  <span>🎭 <strong>Demo Interactiva</strong> — Cambia de rol para ver la app desde cada perspectiva:</span>
+  <div class="role-selector" style="margin:0;">
+    <button class="role-btn active" onclick="switchRole('admin')" style="font-size:11.5px;padding:4px 10px;">👑 Admin</button>
+    <button class="role-btn" onclick="switchRole('director')" style="font-size:11.5px;padding:4px 10px;">🏆 Director</button>
+    <button class="role-btn" onclick="switchRole('coordinator')" style="font-size:11.5px;padding:4px 10px;">📋 Coordinador</button>
+    <button class="role-btn" onclick="switchRole('coach')" style="font-size:11.5px;padding:4px 10px;">⚽ Entrenador</button>
+    <button class="role-btn" onclick="switchRole('parent')" style="font-size:11.5px;padding:4px 10px;">👨‍👦 Padre</button>
+  </div>
+</div>
+
+<div id="app">
+
+  <!-- ══════════════ SIDEBAR ══════════════ -->
+  <aside id="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-icon">🐆</div>
+      <div class="logo-text">
+        <strong>Panteras FC</strong>
+        <span>Temporada 2024-2025</span>
+      </div>
+    </div>
+
+    <nav class="sidebar-nav">
+      <div class="nav-section-title">Principal</div>
+      <button class="nav-item active" data-page="dashboard">
+        <span class="nav-icon">🏠</span> Dashboard
+      </button>
+      <button class="nav-item" data-page="players">
+        <span class="nav-icon">👥</span> Jugadores
+      </button>
+      <button class="nav-item" data-page="training">
+        <span class="nav-icon">⚽</span> Entrenamientos
+      </button>
+      <button class="nav-item" data-page="attendance">
+        <span class="nav-icon">✅</span> Asistencia
+        <span class="nav-badge">3</span>
+      </button>
+
+      <div class="nav-section-title">Desarrollo</div>
+      <button class="nav-item" data-page="evaluations">
+        <span class="nav-icon">⭐</span> Evaluaciones
+      </button>
+      <button class="nav-item" data-page="payments">
+        <span class="nav-icon">💰</span> Pagos
+        <span class="nav-badge">4</span>
+      </button>
+      <button class="nav-item" data-page="reports">
+        <span class="nav-icon">📊</span> Reportes
+      </button>
+
+      <div class="nav-section-title">Sistema</div>
+      <button class="nav-item" data-page="settings">
+        <span class="nav-icon">⚙️</span> Configuración
+      </button>
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="user-profile">
+        <div class="user-avatar">CM</div>
+        <div class="user-info">
+          <div class="user-name">Carlos Martínez</div>
+          <div class="user-role">Administrador</div>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ══════════════ MAIN ══════════════ -->
+  <main id="main">
+
+    <!-- HEADER -->
+    <header id="header">
+      <div class="header-title" id="header-title">Dashboard</div>
+      <div class="header-actions">
+        <!-- AI Training Button -->
+        <button class="btn btn-primary btn-sm" onclick="showAIGenerator()">
+          ✨ Generar sesión IA
+        </button>
+        <!-- Notifications -->
+        <div style="position:relative;">
+          <button class="btn-icon" id="notif-bell" onclick="toggleNotifications()">
+            🔔
+            <span class="notif-dot"></span>
+          </button>
+          <div id="notif-panel">
+            <div class="notif-panel-header">
+              <span>🔔 Notificaciones</span>
+              <span class="badge badge-danger">3 nuevas</span>
+            </div>
+            <div class="notif-list" id="notif-list"></div>
+            <div style="padding:10px;border-top:1px solid var(--gray-200);text-align:center;">
+              <button class="btn btn-ghost btn-sm" style="width:100%;">Ver todas</button>
+            </div>
+          </div>
+        </div>
+        <button class="btn-icon" title="Perfil">👤</button>
+      </div>
+    </header>
+
+    <!-- CONTENT -->
+    <div id="content">
+
+      <!-- ══════════ DASHBOARD PAGE ══════════ -->
+      <div class="page active" id="page-dashboard">
+
+        <!-- Stats -->
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-icon blue">👥</div>
+            <div>
+              <div class="stat-value" id="stat-players">87</div>
+              <div class="stat-label">Jugadores Activos</div>
+              <div class="stat-change up">↑ +3 este mes</div>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon green">🏟️</div>
+            <div>
+              <div class="stat-value" id="stat-teams">6</div>
+              <div class="stat-label">Categorías Activas</div>
+              <div class="stat-change up">Sub-8 a Sub-18</div>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon orange">✅</div>
+            <div>
+              <div class="stat-value" id="stat-attendance">82%</div>
+              <div class="stat-label">Asistencia Promedio</div>
+              <div class="stat-change up">↑ +4% vs enero 2024</div>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon green">💰</div>
+            <div>
+              <div class="stat-value" id="stat-revenue" style="font-size:22px;">$156,800</div>
+              <div class="stat-label">Ingresos del Mes</div>
+              <div class="stat-change up">↑ +12% vs enero 2024</div>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon red">⚠️</div>
+            <div>
+              <div class="stat-value" id="stat-pending">14</div>
+              <div class="stat-label">Pagos Pendientes</div>
+              <div class="stat-change down">↓ $11,900 MXN</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Alert -->
+        <div class="alert alert-danger mb-4">
+          <span>🔴</span>
+          <span>
+            <strong>Alerta de riesgo:</strong> 2 jugadores con 3+ ausencias en 30 días. Se recomienda contactar a los padres.
+            <button class="btn btn-sm btn-danger" style="margin-left:12px;" onclick="navigate('attendance');renderAttendance()">Ver ahora</button>
+          </span>
+        </div>
+
+        <div class="grid-3-1" style="gap:16px;">
+          <!-- Sessions table -->
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">📅 Sesiones Recientes</div>
+              <button class="btn btn-sm btn-outline" onclick="navigate('training');renderTraining()">Ver todas</button>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Sesión</th>
+                    <th>Fecha</th>
+                    <th>Entrenador</th>
+                    <th>Estado</th>
+                    <th>Asist.</th>
+                  </tr>
+                </thead>
+                <tbody id="recent-sessions-tbody"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Right column -->
+          <div style="display:flex;flex-direction:column;gap:16px;">
+            <!-- Risk players -->
+            <div class="card">
+              <div class="card-header">
+                <div class="card-title">⚠️ Jugadores en Riesgo</div>
+              </div>
+              <div class="card-body" id="risk-players" style="padding:14px;"></div>
+            </div>
+
+            <!-- Recent activity -->
+            <div class="card">
+              <div class="card-header">
+                <div class="card-title">📋 Actividad Reciente</div>
+              </div>
+              <div class="card-body" id="recent-activity" style="padding:14px;"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Categories overview -->
+        <div class="card mt-4">
+          <div class="card-header">
+            <div class="card-title">🏆 Categorías</div>
+            <button class="btn btn-sm btn-primary" onclick="navigate('players');renderPlayers()">Ver jugadores</button>
+          </div>
+          <div class="card-body">
+            <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;">
+              ${[
+                {name:"Sub-8",  players:12, coach:"Roberto Díaz", color:"#3b82f6"},
+                {name:"Sub-10", players:16, coach:"Ana Torres",   color:"#10b981"},
+                {name:"Sub-12", players:18, coach:"Miguel Soto",  color:"#f59e0b"},
+                {name:"Sub-14", players:15, coach:"Luis Vega",    color:"#8b5cf6"},
+                {name:"Sub-16", players:14, coach:"Pedro Ruiz",   color:"#ef4444"},
+                {name:"Sub-18", players:12, coach:"Jorge Mora",   color:"#ec4899"},
+              ].map(c => `
+                <div style="border:1px solid var(--gray-200);border-radius:10px;padding:14px;border-top:3px solid ${c.color};">
+                  <div style="font-weight:800;font-size:15px;margin-bottom:2px;">${c.name}</div>
+                  <div style="font-size:12px;color:var(--gray-500);margin-bottom:8px;">${c.coach}</div>
+                  <div style="display:flex;align-items:center;justify-content:space-between;">
+                    <span style="font-size:22px;font-weight:800;">${c.players}</span>
+                    <span style="font-size:11px;color:var(--gray-400);">jugadores</span>
+                  </div>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══════════ PLAYERS PAGE ══════════ -->
+      <div class="page" id="page-players">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
+          <div>
+            <h2 style="font-size:18px;font-weight:800;">Jugadores</h2>
+            <p style="font-size:13px;color:var(--gray-500);">87 jugadores activos en 6 categorías</p>
+          </div>
+          <div style="display:flex;gap:10px;align-items:center;">
+            <div class="search-wrap">
+              <span class="search-icon">🔍</span>
+              <input class="form-control" type="text" placeholder="Buscar jugador..."
+                     oninput="searchPlayers(this.value)" style="padding-left:36px;width:220px;">
+            </div>
+            <select class="form-control" style="width:140px;" onchange="renderPlayers(this.value)">
+              <option value="">Todas las categorías</option>
+              <option>Sub-8</option>
+              <option>Sub-10</option>
+              <option>Sub-12</option>
+              <option>Sub-14</option>
+              <option>Sub-16</option>
+              <option>Sub-18</option>
+            </select>
+            <button class="btn btn-primary" onclick="openModal('new-player-modal')">
+              + Nuevo jugador
+            </button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Jugador</th>
+                  <th>Categoría</th>
+                  <th>Edad</th>
+                  <th>Dorsal</th>
+                  <th>Asistencia</th>
+                  <th>Pago</th>
+                  <th>Riesgo</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody id="players-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══════════ TRAINING PAGE ══════════ -->
+      <div class="page" id="page-training">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
+          <div>
+            <h2 style="font-size:18px;font-weight:800;">Entrenamientos</h2>
+            <p style="font-size:13px;color:var(--gray-500);">Planificación y gestión de sesiones</p>
+          </div>
+          <div style="display:flex;gap:10px;">
+            <button class="btn btn-outline" onclick="showAIGenerator()">✨ Generar con IA</button>
+            <button class="btn btn-primary" onclick="openModal('new-session-modal')">+ Nueva sesión</button>
+          </div>
+        </div>
+
+        <div class="grid-3-1" style="gap:16px;margin-bottom:20px;">
+          <div class="card">
+            <div class="card-header"><div class="card-title">📋 Todas las Sesiones</div></div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Sesión</th>
+                    <th>Equipo</th>
+                    <th>Entrenador</th>
+                    <th>Fecha</th>
+                    <th>Estado</th>
+                    <th>Acciones</th>
+                  </tr>
+                </thead>
+                <tbody id="training-tbody"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Mini calendar -->
+          <div class="card">
+            <div class="card-header"><div class="card-title">📅 Enero 2025</div></div>
+            <div class="card-body" style="padding:12px;">
+              <div class="cal-grid">
+                <div class="cal-day-name">L</div>
+                <div class="cal-day-name">M</div>
+                <div class="cal-day-name">X</div>
+                <div class="cal-day-name">J</div>
+                <div class="cal-day-name">V</div>
+                <div class="cal-day-name">S</div>
+                <div class="cal-day-name">D</div>
+                ${Array.from({length:31}, (_,i)=>{
+                  const d = i+1;
+                  const hasEvent = [6,8,10,13,15,17,20,22,24,27,29,31].includes(d);
+                  const isToday = d === 20;
+                  return `<div class="cal-day ${isToday?'today':''} ${hasEvent?'has-event':''}">${d}</div>`;
+                }).join('')}
+              </div>
+              <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--gray-100);">
+                <div style="font-size:11px;color:var(--gray-400);display:flex;gap:12px;justify-content:center;">
+                  <span>● Entrenamiento</span>
+                  <span>🟡 Partido</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══════════ ATTENDANCE PAGE ══════════ -->
+      <div class="page" id="page-attendance">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
+          <div>
+            <h2 style="font-size:18px;font-weight:800;">Control de Asistencia</h2>
+            <p style="font-size:13px;color:var(--gray-500);">Sesiones programadas para hoy — 21 Enero 2025</p>
+          </div>
+        </div>
+
+        <div class="alert alert-warning mb-4">
+          <span>⚠️</span>
+          <span><strong>2 jugadores en riesgo de abandono</strong> — Sebastián López y Santiago Cruz tienen 3+ ausencias este mes.</span>
+        </div>
+
+        <div id="attendance-sessions"></div>
+
+        <!-- Attendance stats -->
+        <div class="grid-3" style="gap:16px;margin-top:20px;">
+          <div class="card">
+            <div class="card-body" style="text-align:center;padding:20px;">
+              <div style="font-size:36px;font-weight:800;color:var(--success);">82%</div>
+              <div style="font-size:13px;color:var(--gray-500);">Asistencia este mes</div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-body" style="text-align:center;padding:20px;">
+              <div style="font-size:36px;font-weight:800;color:var(--danger);">2</div>
+              <div style="font-size:13px;color:var(--gray-500);">Jugadores en riesgo alto</div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-body" style="text-align:center;padding:20px;">
+              <div style="font-size:36px;font-weight:800;color:var(--primary);">24</div>
+              <div style="font-size:13px;color:var(--gray-500);">Sesiones este mes</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══════════ EVALUATIONS PAGE ══════════ -->
+      <div class="page" id="page-evaluations">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
+          <div>
+            <h2 style="font-size:18px;font-weight:800;">Evaluaciones</h2>
+            <p style="font-size:13px;color:var(--gray-500);">Rendimiento técnico, táctico, físico y mental</p>
+          </div>
+          <div style="display:flex;gap:10px;">
+            <select class="form-control" style="width:150px;">
+              <option>Todas las categorías</option>
+              <option>Sub-8</option><option>Sub-10</option><option>Sub-12</option>
+              <option>Sub-14</option><option>Sub-16</option><option>Sub-18</option>
+            </select>
+          </div>
+        </div>
+        <div id="eval-players"></div>
+      </div>
+
+      <!-- ══════════ PAYMENTS PAGE ══════════ -->
+      <div class="page" id="page-payments">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
+          <div>
+            <h2 style="font-size:18px;font-weight:800;">Control de Pagos</h2>
+            <p style="font-size:13px;color:var(--gray-500);">Mensualidades y estado financiero</p>
+          </div>
+          <div style="display:flex;gap:10px;">
+            <button class="btn btn-outline" onclick="sendAllReminders()">📱 Enviar recordatorios</button>
+            <button class="btn btn-primary" onclick="openModal('new-payment-modal')">+ Registrar pago</button>
+          </div>
+        </div>
+
+        <!-- Payment stats -->
+        <div class="stats-grid" style="margin-bottom:20px;">
+          <div class="stat-card">
+            <div class="stat-icon green">✅</div>
+            <div>
+              <div class="stat-value">$130,550</div>
+              <div class="stat-label">Cobrado este mes</div>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon red">❌</div>
+            <div>
+              <div class="stat-value">$11,900</div>
+              <div class="stat-label">Deuda vencida</div>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon orange">⏳</div>
+            <div>
+              <div class="stat-value">$1,500</div>
+              <div class="stat-label">Pendiente</div>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon blue">📊</div>
+            <div>
+              <div class="stat-value">91%</div>
+              <div class="stat-label">Tasa de cobro</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Filter tabs -->
+        <div class="tabs">
+          <button class="tab-btn active" onclick="filterPayments('all', this)">Todos</button>
+          <button class="tab-btn" onclick="filterPayments('overdue', this)">Vencidos ⚠️</button>
+          <button class="tab-btn" onclick="filterPayments('pending', this)">Pendientes</button>
+          <button class="tab-btn" onclick="filterPayments('paid', this)">Pagados ✅</button>
+        </div>
+
+        <div class="card">
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Jugador / Padre</th>
+                  <th>Categoría</th>
+                  <th>Monto</th>
+                  <th>Período</th>
+                  <th>Estado</th>
+                  <th>Fecha pago</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody id="payments-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══════════ REPORTS PAGE ══════════ -->
+      <div class="page" id="page-reports">
+        <div style="margin-bottom:20px;">
+          <h2 style="font-size:18px;font-weight:800;">Reportes & Análisis</h2>
+          <p style="font-size:13px;color:var(--gray-500);">Estadísticas de la academia — Enero 2025</p>
+        </div>
+        <div id="reports-content"></div>
+      </div>
+
+      <!-- ══════════ SETTINGS PAGE ══════════ -->
+      <div class="page" id="page-settings">
+        <div style="margin-bottom:20px;">
+          <h2 style="font-size:18px;font-weight:800;">Configuración</h2>
+          <p style="font-size:13px;color:var(--gray-500);">Ajustes de la academia</p>
+        </div>
+        <div class="grid-2" style="gap:16px;">
+          <div class="card">
+            <div class="card-header"><div class="card-title">🏟️ Información de la Academia</div></div>
+            <div class="card-body">
+              <div class="form-group">
+                <label class="form-label">Nombre</label>
+                <input class="form-control" value="Academia Panteras FC">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Ciudad</label>
+                <input class="form-control" value="Ciudad de México">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Temporada activa</label>
+                <input class="form-control" value="2024-2025">
+              </div>
+              <button class="btn btn-primary" onclick="showToast('✅ Configuración guardada','success')">Guardar cambios</button>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header"><div class="card-title">🤖 Integraciones IA & Automatización</div></div>
+            <div class="card-body">
+              <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--gray-100);">
+                <div>
+                  <div style="font-weight:600;font-size:13.5px;">Claude AI</div>
+                  <div style="font-size:12px;color:var(--gray-500);">Generación de sesiones y análisis</div>
+                </div>
+                <span class="badge badge-success">✓ Conectado</span>
+              </div>
+              <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--gray-100);">
+                <div>
+                  <div style="font-weight:600;font-size:13.5px;">WhatsApp API</div>
+                  <div style="font-size:12px;color:var(--gray-500);">Notificaciones a padres</div>
+                </div>
+                <span class="badge badge-success">✓ Conectado</span>
+              </div>
+              <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--gray-100);">
+                <div>
+                  <div style="font-weight:600;font-size:13.5px;">n8n Automations</div>
+                  <div style="font-size:12px;color:var(--gray-500);">Flujos de trabajo automáticos</div>
+                </div>
+                <span class="badge badge-success">✓ Activo</span>
+              </div>
+              <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 0;">
+                <div>
+                  <div style="font-weight:600;font-size:13.5px;">Email (SendGrid)</div>
+                  <div style="font-size:12px;color:var(--gray-500);">Envío de reportes por email</div>
+                </div>
+                <span class="badge badge-warning">⏳ Pendiente</span>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header"><div class="card-title">💰 Tarifas por Categoría</div></div>
+            <div class="card-body">
+              ${[
+                {cat:"Sub-8",  price:650},
+                {cat:"Sub-10", price:850},
+                {cat:"Sub-12", price:850},
+                {cat:"Sub-14", price:1050},
+                {cat:"Sub-16", price:1050},
+                {cat:"Sub-18", price:1200},
+              ].map(c => `
+                <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px;">
+                  <span style="width:70px;font-weight:600;font-size:13px;">${c.cat}</span>
+                  <input class="form-control" style="flex:1;" value="$${c.price} MXN/mes">
+                </div>
+              `).join('')}
+              <button class="btn btn-primary mt-4" onclick="showToast('✅ Tarifas actualizadas','success')">Guardar tarifas</button>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header"><div class="card-title">🔔 Automatizaciones Activas</div></div>
+            <div class="card-body">
+              ${[
+                {name:"Recordatorio de pago", desc:"Día 25 de cada mes → WhatsApp a padres con deuda", active:true},
+                {name:"Reporte semanal IA", desc:"Viernes 6pm → Reporte personalizado a cada familia", active:true},
+                {name:"Alerta de ausencia", desc:"Al registrar ausencia → WhatsApp inmediato a padres", active:true},
+                {name:"Alerta de riesgo", desc:"3+ ausencias en 30 días → Notificación al coordinador", active:true},
+                {name:"Nueva sesión", desc:"Al crear sesión → Notificación push a entrenador", active:false},
+              ].map(a => `
+                <div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--gray-100);">
+                  <div style="flex:1;">
+                    <div style="font-weight:600;font-size:13px;">${a.name}</div>
+                    <div style="font-size:11.5px;color:var(--gray-500);">${a.desc}</div>
+                  </div>
+                  <span class="badge ${a.active?'badge-success':'badge-gray'}">${a.active?'✓ Activo':'Inactivo'}</span>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /content -->
+  </main>
+</div><!-- /app -->
+
+<!-- ══════════════════════════════════════
+     MODALS
+══════════════════════════════════════ -->
+
+<!-- Player Profile Modal -->
+<div class="modal-overlay" id="player-modal">
+  <div class="modal" style="max-width:620px;">
+    <div class="modal-header">
+      <div class="modal-title">Perfil del Jugador</div>
+      <button class="modal-close" onclick="closeModal('player-modal')">✕</button>
+    </div>
+    <div class="modal-body" id="player-modal-body"></div>
+  </div>
+</div>
+
+<!-- New Player Modal -->
+<div class="modal-overlay" id="new-player-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">➕ Registrar Nuevo Jugador</div>
+      <button class="modal-close" onclick="closeModal('new-player-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Nombre *</label>
+          <input class="form-control" placeholder="Nombre(s)">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Apellidos *</label>
+          <input class="form-control" placeholder="Apellidos">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Fecha de nacimiento *</label>
+          <input class="form-control" type="date">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Posición</label>
+          <select class="form-control">
+            <option>Portero</option><option>Defensa</option>
+            <option>Mediocampista</option><option>Delantero</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Categoría *</label>
+          <select class="form-control">
+            <option>Sub-8</option><option>Sub-10</option><option>Sub-12</option>
+            <option>Sub-14</option><option>Sub-16</option><option>Sub-18</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Número de dorsal</label>
+          <input class="form-control" type="number" placeholder="Ej: 10">
+        </div>
+      </div>
+      <div style="border-top:1px solid var(--gray-200);padding-top:16px;margin-top:4px;">
+        <div style="font-size:12px;font-weight:700;color:var(--gray-600);margin-bottom:10px;">DATOS DEL PADRE/TUTOR</div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Nombre del padre/madre</label>
+            <input class="form-control" placeholder="Nombre completo">
+          </div>
+          <div class="form-group">
+            <label class="form-label">WhatsApp</label>
+            <input class="form-control" placeholder="+52 55 1234 5678">
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('new-player-modal')">Cancelar</button>
+      <button class="btn btn-primary" onclick="closeModal('new-player-modal');showToast('✅ Jugador registrado. Se notificó al padre por WhatsApp','success')">Guardar jugador</button>
+    </div>
+  </div>
+</div>
+
+<!-- AI Training Generator Modal -->
+<div class="modal-overlay" id="ai-modal">
+  <div class="modal" style="max-width:680px;">
+    <div class="modal-header">
+      <div class="modal-title">✨ Generador de Sesión con IA</div>
+      <button class="modal-close" onclick="closeModal('ai-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="alert alert-info mb-4">
+        🤖 <strong>Powered by Claude AI</strong> — Describe los objetivos y la IA creará una sesión completa con ejercicios, tiempos y notas de coaching.
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Equipo / Categoría *</label>
+          <select class="form-control" id="ai-team">
+            <option value="">Seleccionar...</option>
+            <option>Sub-8</option><option>Sub-10</option><option>Sub-12</option>
+            <option>Sub-14</option><option>Sub-16</option><option>Sub-18</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Duración</label>
+          <select class="form-control">
+            <option>60 minutos</option><option selected>90 minutos</option><option>120 minutos</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Tipo de sesión</label>
+          <select class="form-control">
+            <option>Técnica individual</option>
+            <option>Táctica colectiva</option>
+            <option>Físico + Velocidad</option>
+            <option>Partido de práctica</option>
+            <option>Mixta (Técnica + Táctica)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Nivel</label>
+          <select class="form-control">
+            <option>Principiante</option><option selected>Intermedio</option><option>Avanzado</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Objetivos específicos *</label>
+        <textarea class="form-control" rows="3" id="ai-objectives"
+          placeholder="Ej: Mejorar el primer toque bajo presión, trabajar la presión alta y las transiciones defensa-ataque..."></textarea>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Restricciones o notas especiales</label>
+        <input class="form-control" placeholder="Ej: 2 jugadores con lesión, campo reducido disponible...">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('ai-modal')">Cancelar</button>
+      <button class="btn btn-primary" onclick="generateAISession()">✨ Generar sesión con IA</button>
+    </div>
+    <div id="ai-result" style="padding:0 24px 20px;"></div>
+  </div>
+</div>
+
+<!-- Attendance Modal -->
+<div class="modal-overlay" id="att-modal">
+  <div class="modal" style="max-width:540px;">
+    <div class="modal-header">
+      <div class="modal-title" id="att-modal-title">Registrar Asistencia</div>
+      <button class="modal-close" onclick="closeModal('att-modal')">✕</button>
+    </div>
+    <div class="modal-body" id="att-modal-body"></div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('att-modal')">Cancelar</button>
+      <button class="btn btn-success" onclick="saveAttendance()">💾 Guardar y notificar padres</button>
+    </div>
+  </div>
+</div>
+
+<!-- Session Detail Modal -->
+<div class="modal-overlay" id="session-modal">
+  <div class="modal" style="max-width:600px;">
+    <div class="modal-header">
+      <div class="modal-title" id="session-modal-title">Detalle de Sesión</div>
+      <button class="modal-close" onclick="closeModal('session-modal')">✕</button>
+    </div>
+    <div class="modal-body" id="session-modal-body"></div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('session-modal')">Cerrar</button>
+      <button class="btn btn-primary" onclick="closeModal('session-modal');showToast('📄 Exportando PDF...','info')">📄 Exportar PDF</button>
+    </div>
+  </div>
+</div>
+
+<!-- New Session Modal -->
+<div class="modal-overlay" id="new-session-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">📅 Nueva Sesión de Entrenamiento</div>
+      <button class="modal-close" onclick="closeModal('new-session-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">Título de la sesión *</label>
+        <input class="form-control" placeholder="Ej: Técnica individual + Definición">
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Equipo *</label>
+          <select class="form-control">
+            <option>Sub-8</option><option>Sub-10</option><option>Sub-12</option>
+            <option>Sub-14</option><option>Sub-16</option><option>Sub-18</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Entrenador</label>
+          <select class="form-control">
+            <option>Ana Torres</option><option>Miguel Soto</option>
+            <option>Luis Vega</option><option>Pedro Ruiz</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Fecha *</label>
+          <input class="form-control" type="date">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Hora</label>
+          <input class="form-control" type="time" value="16:00">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Duración (minutos)</label>
+        <select class="form-control">
+          <option>60</option><option selected>90</option><option>120</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Objetivos de la sesión</label>
+        <textarea class="form-control" rows="2" placeholder="¿Qué se trabajará en esta sesión?"></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('new-session-modal')">Cancelar</button>
+      <button class="btn btn-primary" onclick="closeModal('new-session-modal');showToast('✅ Sesión programada. El entrenador fue notificado','success')">Guardar sesión</button>
+    </div>
+  </div>
+</div>
+
+<!-- Evaluation Modal -->
+<div class="modal-overlay" id="eval-modal">
+  <div class="modal" style="max-width:600px;">
+    <div class="modal-header">
+      <div class="modal-title" id="eval-modal-title">Evaluación</div>
+      <button class="modal-close" onclick="closeModal('eval-modal')">✕</button>
+    </div>
+    <div class="modal-body" id="eval-modal-body"></div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('eval-modal')">Cancelar</button>
+      <button class="btn btn-primary" onclick="closeModal('eval-modal');showToast('✅ Evaluación guardada. Reporte enviado a los padres','success')">Guardar evaluación</button>
+    </div>
+  </div>
+</div>
+
+<!-- New Payment Modal -->
+<div class="modal-overlay" id="new-payment-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">💰 Registrar Pago</div>
+      <button class="modal-close" onclick="closeModal('new-payment-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">Jugador *</label>
+        <select class="form-control">
+          <option>Seleccionar jugador...</option>
+          <option>Sebastián López (Sub-10)</option>
+          <option>Lucas Pérez (Sub-8)</option>
+          <option>Santiago Cruz (Sub-14)</option>
+        </select>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Monto *</label>
+          <input class="form-control" placeholder="$850" type="number">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Período *</label>
+          <select class="form-control">
+            <option>Enero 2025</option><option>Diciembre 2024</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Método de pago</label>
+          <select class="form-control">
+            <option>Transferencia</option><option>Efectivo</option><option>Tarjeta</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Referencia</label>
+          <input class="form-control" placeholder="Número de referencia">
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('new-payment-modal')">Cancelar</button>
+      <button class="btn btn-success" onclick="closeModal('new-payment-modal');showToast('✅ Pago registrado. Se enviará comprobante al padre','success')">✅ Registrar pago</button>
+    </div>
+  </div>
+</div>
+
+<script src="js/app.js"></script>
+<script>
+  // Extra helpers
+  function filterPayments(status, btn) {
+    document.querySelectorAll('.tabs .tab-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    if (status === 'all') renderPayments();
+    else {
+      const tbody = document.getElementById('payments-tbody');
+      const list = DB.payments.filter(p => p.status === status);
+      if (!list.length) {
+        tbody.innerHTML = `<tr><td colspan="7"><div class="empty-state"><div class="empty-icon">💸</div><p>No hay pagos con este estado</p></div></td></tr>`;
+        return;
+      }
+      tbody.innerHTML = list.map(p => `
+        <tr>
+          <td><div class="font-bold">${p.player}</div><div style="font-size:11px;color:var(--gray-400);">${p.parent}</div></td>
+          <td><span class="badge badge-purple">${p.category}</span></td>
+          <td style="font-weight:700;">$${p.amount.toLocaleString()}</td>
+          <td>${p.month}</td>
+          <td><span class="badge ${p.status==='paid'?'badge-success':p.status==='overdue'?'badge-danger':'badge-warning'}">${p.status==='paid'?'✓ Pagado':p.status==='overdue'?'✗ Vencido':'⏳ Pendiente'}</span></td>
+          <td>${p.paidDate || '—'}</td>
+          <td>${p.status !== 'paid' ? `<button class="btn btn-sm btn-success" onclick="markPaid('${p.id}')">✓ Marcar pagado</button>` : '—'}</td>
+        </tr>
+      `).join('');
+    }
+  }
+
+  function sendAllReminders() {
+    showToast('📱 Enviando recordatorios de pago por WhatsApp a todos los padres con deuda...', 'info');
+    setTimeout(() => showToast('✅ 4 recordatorios enviados exitosamente', 'success'), 2500);
+  }
+</script>
+</body>
+</html>

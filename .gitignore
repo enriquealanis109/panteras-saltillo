@@ -3,3 +3,13 @@ node_modules/
 .env.local
 .env
 out/
+
+.vercel
+.env*.local
+
+# build artifacts — regenerated on every build, shouldn't be tracked
+*.tsbuildinfo
+public/sw.js
+public/workbox-*.js
+public/worker-*.js
+public/swe-worker-*.js

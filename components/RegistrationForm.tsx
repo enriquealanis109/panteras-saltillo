@@ -1,218 +1,80 @@
 "use client";
-import { useState } from "react";
-import toast from "react-hot-toast";
+import { trackEvento } from "@/lib/analytics";
 
-interface FormData {
-  parentName: string;
-  childName: string;
-  age: string;
-  phone: string;
-  category: string;
-}
+const WHATSAPP = "https://wa.me/528445028582";
+
+const perks = [
+  "Primera sesión de prueba sin costo",
+  "Agenda en minutos por WhatsApp",
+  "Sin compromiso de inscripción",
+  "Confirmación inmediata",
+];
 
 export default function RegistrationForm() {
-  const [formData, setFormData] = useState<FormData>({
-    parentName: "",
-    childName: "",
-    age: "",
-    phone: "",
-    category: "",
-  });
-  const [loading, setLoading] = useState(false);
-  const [submitted, setSubmitted] = useState(false);
-
-  const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
-  ) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-
-    try {
-      await fetch("/api/register", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
-      });
-    } catch {}
-
-    setSubmitted(true);
-    setLoading(false);
-  };
-
-  if (submitted) {
-    return (
-      <section className="py-24 bg-pantera-gray" id="inscripcion">
-        <div className="max-w-xl mx-auto px-4 text-center">
-          <div className="text-6xl mb-6">🎉</div>
-          <h3 className="text-3xl font-black text-white mb-4">
-            ¡Datos recibidos!
-          </h3>
-          <p className="text-gray-400 text-lg mb-8">
-            El siguiente paso es hablar con nuestro asistente en Telegram — te ayudará a agendar tu sesión de prueba <span className="text-white font-semibold">gratuita</span> en segundos.
-          </p>
-          <a
-            href="https://t.me/panteras_bot_10bot"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-3 bg-[#229ED9] hover:bg-[#1a8fc4] text-white font-bold py-4 px-8 rounded-xl transition-all duration-200 transform hover:scale-105 shadow-lg text-lg"
-          >
-            <svg viewBox="0 0 24 24" className="w-6 h-6 fill-current" xmlns="http://www.w3.org/2000/svg">
-              <path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/>
-            </svg>
-            Continuar en Telegram →
-          </a>
-          <p className="text-gray-600 text-sm mt-4">
-            Nuestro asistente te atiende de inmediato ⚡
-          </p>
-        </div>
-      </section>
-    );
-  }
-
   return (
-    <section className="py-24 bg-pantera-gray" id="inscripcion">
-      <div className="max-w-6xl mx-auto px-4">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
-          {/* Left side */}
+    <section id="inscripcion" className="py-16 sm:py-24" style={{ background: "var(--bg-alt)" }}>
+      <div className="max-w-6xl mx-auto px-5 sm:px-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-16 items-center">
+
+          {/* Izquierda — texto */}
           <div>
-            <span className="text-pantera-green font-semibold text-sm uppercase tracking-widest">
-              Inscripción
-            </span>
-            <h2 className="section-title mt-3 mb-6">
-              El primer paso
-              <br />
+            <span className="section-label">Inscripción</span>
+            <div className="section-line" />
+            <h2 className="section-title-theme mt-0 mb-6">
+              El primer paso<br />
               <span className="text-pantera-green">empieza aquí</span>
             </h2>
-            <p className="section-subtitle mb-8">
-              Llena el formulario y un entrenador de Panteras FC te contactará
-              para coordinar la primera sesión de prueba —{" "}
-              <span className="text-white font-semibold">completamente gratis</span>.
+            <p className="section-subtitle-theme mb-8">
+              Agenda tu sesión de prueba{" "}
+              <span className="font-semibold" style={{ color: "var(--text-primary)" }}>completamente gratis</span>{" "}
+              directamente por WhatsApp, sin formularios ni esperas.
             </p>
 
-            <div className="space-y-4">
-              {[
-                "✅ Primera sesión de prueba sin costo",
-                "✅ Evaluación personalizada de tu hijo",
-                "✅ Sin compromiso de inscripción",
-                "✅ Respuesta en menos de 24 horas",
-              ].map((item) => (
-                <div key={item} className="text-gray-300 font-medium">
-                  {item}
-                </div>
+            <ul className="space-y-4 mb-8">
+              {perks.map((p) => (
+                <li key={p} className="flex items-center gap-3 font-medium" style={{ color: "var(--text-secondary)" }}>
+                  <span className="w-5 h-5 rounded-full bg-pantera-green/20 border border-pantera-green/40 flex items-center justify-center text-pantera-green text-xs flex-shrink-0">
+                    ✓
+                  </span>
+                  {p}
+                </li>
               ))}
-            </div>
+            </ul>
           </div>
 
-          {/* Form */}
-          <div className="card border border-pantera-green/20">
-            <h3 className="text-white font-bold text-xl mb-6">
-              Datos de inscripción
-            </h3>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <label className="text-gray-400 text-sm font-medium block mb-2">
-                  Tu nombre (papá / mamá)
-                </label>
-                <input
-                  type="text"
-                  name="parentName"
-                  required
-                  placeholder="Juan García"
-                  className="input-field"
-                  value={formData.parentName}
-                  onChange={handleChange}
-                />
-              </div>
+          {/* Derecha — CTA */}
+          <div className="card-theme border border-pantera-green/20 flex flex-col items-center text-center gap-6 py-12">
 
-              <div>
-                <label className="text-gray-400 text-sm font-medium block mb-2">
-                  Nombre de tu hijo
-                </label>
-                <input
-                  type="text"
-                  name="childName"
-                  required
-                  placeholder="Carlos García"
-                  className="input-field"
-                  value={formData.childName}
-                  onChange={handleChange}
-                />
-              </div>
+            {/* Ícono WhatsApp */}
+            <div className="w-20 h-20 rounded-2xl flex items-center justify-center"
+              style={{ background: "rgba(22,163,74,0.12)", border: "1px solid rgba(22,163,74,0.2)" }}>
+              <svg width="36" height="36" viewBox="0 0 24 24" fill="#22c55e">
+                <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+              </svg>
+            </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="text-gray-400 text-sm font-medium block mb-2">
-                    Edad del jugador
-                  </label>
-                  <input
-                    type="number"
-                    name="age"
-                    required
-                    placeholder="10"
-                    min="5"
-                    max="17"
-                    className="input-field"
-                    value={formData.age}
-                    onChange={handleChange}
-                  />
-                </div>
-
-                <div>
-                  <label className="text-gray-400 text-sm font-medium block mb-2">
-                    Categoría aprox.
-                  </label>
-                  <select
-                    name="category"
-                    className="input-field [&>option]:bg-[#0a0a0a] [&>option]:text-white"
-                    style={{ backgroundColor: '#111111', color: 'white' }}
-                    value={formData.category}
-                    onChange={handleChange}
-                  >
-                    <option value="" style={{background:'#0a0a0a',color:'white'}}>Seleccionar categoría</option>
-                    <option value="Cat 2021" style={{background:'#0a0a0a',color:'white'}}>Cat. 2021 — 5 años</option>
-                    <option value="Cat 2020" style={{background:'#0a0a0a',color:'white'}}>Cat. 2020 — 6 años</option>
-                    <option value="Cat 2019" style={{background:'#0a0a0a',color:'white'}}>Cat. 2019 — 7 años</option>
-                    <option value="Cat 2018" style={{background:'#0a0a0a',color:'white'}}>Cat. 2018 — 8 años</option>
-                    <option value="Cat 2017" style={{background:'#0a0a0a',color:'white'}}>Cat. 2017 — 9 años</option>
-                    <option value="Cat 2016" style={{background:'#0a0a0a',color:'white'}}>Cat. 2016 — 10 años</option>
-                    <option value="Cat 2015" style={{background:'#0a0a0a',color:'white'}}>Cat. 2015 — 11 años</option>
-                    <option value="Cat 2014" style={{background:'#0a0a0a',color:'white'}}>Cat. 2014 — 12 años</option>
-                    <option value="Cat 2013" style={{background:'#0a0a0a',color:'white'}}>Cat. 2013 — 13 años</option>
-                  </select>
-                </div>
-              </div>
-
-              <div>
-                <label className="text-gray-400 text-sm font-medium block mb-2">
-                  WhatsApp / Teléfono
-                </label>
-                <input
-                  type="tel"
-                  name="phone"
-                  required
-                  placeholder="844 123 4567"
-                  className="input-field"
-                  value={formData.phone}
-                  onChange={handleChange}
-                />
-              </div>
-
-              <button
-                type="submit"
-                disabled={loading}
-                className="btn-primary w-full text-center mt-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
-              >
-                {loading ? "Enviando..." : "Quiero la sesión gratuita →"}
-              </button>
-
-              <p className="text-gray-600 text-xs text-center">
-                Tus datos son privados y no se comparten con nadie.
+            <div>
+              <h3 className="font-bold text-2xl mb-2"
+                style={{ fontFamily: "Syne, sans-serif", color: "var(--text-primary)" }}>
+                Agenda tu clase de prueba
+              </h3>
+              <p className="text-sm leading-relaxed max-w-xs mx-auto" style={{ color: "var(--text-secondary)" }}>
+                Escríbenos por WhatsApp y agenda tu clase de prueba en minutos, sin compromiso.
               </p>
-            </form>
+            </div>
+
+            <a
+              href={WHATSAPP}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={() => trackEvento("whatsapp_clic")}
+              className="btn-primary w-full max-w-xs text-center text-base">
+              Agendar por WhatsApp →
+            </a>
+
+            <p className="text-xs" style={{ color: "var(--text-muted)" }}>
+              844 502 8582
+            </p>
           </div>
         </div>
       </div>

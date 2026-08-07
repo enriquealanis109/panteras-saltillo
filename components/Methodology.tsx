@@ -27,19 +27,18 @@ const steps = [
 
 export default function Methodology() {
   return (
-    <section className="py-24 bg-pantera-black">
-      <div className="max-w-6xl mx-auto px-4">
+    <section className="py-16 sm:py-24" id="metodologia" style={{ background: "var(--bg-page)" }}>
+      <div className="max-w-6xl mx-auto px-5 sm:px-6">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
           <div>
-            <span className="text-pantera-green font-semibold text-sm uppercase tracking-widest">
-              Metodología
-            </span>
-            <h2 className="section-title mt-3 mb-6">
+            <span className="section-label">Metodología</span>
+            <div className="section-line" />
+            <h2 className="section-title-theme mb-6">
               Un sistema que
               <br />
               <span className="text-pantera-green">realmente funciona</span>
             </h2>
-            <p className="section-subtitle mb-8">
+            <p className="section-subtitle-theme mb-8">
               No improvisamos. Cada entrenamiento tiene un propósito claro y
               sigue una progresión pensada para el desarrollo real del jugador.
             </p>
@@ -50,18 +49,17 @@ export default function Methodology() {
 
           <div className="space-y-6">
             {steps.map((step) => (
-              <div
-                key={step.number}
-                className="flex gap-5 group"
-              >
-                <div className="flex-shrink-0">
-                  <span className="text-4xl font-black text-pantera-green/20 group-hover:text-pantera-green/40 transition-colors duration-300">
+              <div key={step.number} className="flex gap-5 group border-b pb-6 last:border-0 last:pb-0" style={{ borderColor: "var(--border-subtle)" }}>
+                <div className="flex-shrink-0 pt-1">
+                  <span className="font-heading text-sm font-semibold text-pantera-green/30 group-hover:text-pantera-green/60 transition-colors duration-300 tracking-widest">
                     {step.number}
                   </span>
                 </div>
-                <div className="pt-2">
-                  <h3 className="text-white font-bold text-lg mb-2">{step.title}</h3>
-                  <p className="text-gray-400 leading-relaxed">{step.description}</p>
+                <div>
+                  <h3 className="font-heading font-semibold text-base mb-1.5 tracking-tight group-hover:text-pantera-green transition-colors duration-300" style={{ color: "var(--text-primary)" }}>
+                    {step.title}
+                  </h3>
+                  <p className="font-body leading-relaxed text-sm" style={{ color: "var(--text-secondary)" }}>{step.description}</p>
                 </div>
               </div>
             ))}
