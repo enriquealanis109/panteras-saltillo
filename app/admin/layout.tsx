@@ -6,8 +6,9 @@ import Image from "next/image";
 import Link from "next/link";
 import { PanelTour } from "@/components/admin/PanelTour";
 import { ADMIN_TOURS } from "@/lib/admin-tours";
+import { DEFAULT_BRANDING, hexToRgbTriplet, type ClubBranding, type ModuloOpcional } from "@/lib/club-context";
 
-const NAV = [
+const NAV: { href: string; label: string; icon: React.ReactNode; modulo?: ModuloOpcional }[] = [
   {
     href: "/admin",
     label: "Dashboard",
@@ -59,6 +60,7 @@ const NAV = [
   {
     href: "/admin/metricas",
     label: "Métricas",
+    modulo: "metricas",
     icon: (
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/>
@@ -69,6 +71,7 @@ const NAV = [
   {
     href: "/admin/partidos",
     label: "Partidos",
+    modulo: "partidos",
     icon: (
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 000 20"/><path d="M2 12h20"/>
@@ -79,6 +82,7 @@ const NAV = [
   {
     href: "/admin/patrocinadores",
     label: "Patrocinadores",
+    modulo: "patrocinadores",
     icon: (
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2"/>
@@ -88,6 +92,7 @@ const NAV = [
   {
     href: "/admin/tienda",
     label: "Tienda",
+    modulo: "tienda",
     icon: (
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 01-8 0"/>
@@ -97,6 +102,7 @@ const NAV = [
   {
     href: "/admin/pedidos",
     label: "Pedidos",
+    modulo: "tienda",
     icon: (
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/>
@@ -106,6 +112,7 @@ const NAV = [
   {
     href: "/admin/padres",
     label: "Padres",
+    modulo: "padres",
     icon: (
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/>
@@ -116,23 +123,33 @@ const NAV = [
 
 // Bottom nav: 4 pinned + "Más" drawer
 const BOTTOM_NAV_PINNED = ["/admin", "/admin/entrenadores", "/admin/documentos", "/admin/metricas"];
-const pinnedItems = NAV.filter((n) => BOTTOM_NAV_PINNED.includes(n.href));
-const moreItems   = NAV.filter((n) => !BOTTOM_NAV_PINNED.includes(n.href));
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const router      = useRouter();
   const pathname    = usePathname();
-  const [ok, setOk]           = useState(false);
-  const [nombre, setNombre]   = useState("");
-  const [masOpen, setMasOpen] = useState(false);
+  const [ok, setOk]             = useState(false);
+  const [nombre, setNombre]     = useState("");
+  const [branding, setBranding] = useState<ClubBranding>(DEFAULT_BRANDING);
+  const [masOpen, setMasOpen]   = useState(false);
 
   useEffect(() => {
     const check = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { router.push("/coach/login"); return; }
-      const { data } = await supabase.from("entrenadores").select("nombre, rol").eq("id", user.id).single();
+      const { data } = await supabase.from("entrenadores").select("nombre, rol, club_id").eq("id", user.id).single();
       if (data?.rol !== "admin") { router.push("/coach"); return; }
       setNombre(data.nombre ?? "Admin");
+      if (data.club_id) {
+        const { data: club } = await supabase.from("clubes").select("nombre, logo_url, color_acento, modulos_activos").eq("id", data.club_id).single();
+        if (club) {
+          setBranding({
+            nombre: club.nombre ?? DEFAULT_BRANDING.nombre,
+            logoUrl: club.logo_url ?? DEFAULT_BRANDING.logoUrl,
+            colorAcento: club.color_acento ?? DEFAULT_BRANDING.colorAcento,
+            modulosActivos: club.modulos_activos ?? [],
+          });
+        }
+      }
       setOk(true);
     };
     check();
@@ -161,33 +178,57 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   const initials = nombre.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase();
 
+  const tieneModulo = (item: { modulo?: ModuloOpcional }) =>
+    !item.modulo || branding.modulosActivos.includes(item.modulo);
+  const pinnedItems = NAV.filter((n) => BOTTOM_NAV_PINNED.includes(n.href));
+  const moreItems   = NAV.filter((n) => !BOTTOM_NAV_PINNED.includes(n.href));
+
+  // Módulo (si aplica) de la página actual — si el club no lo tiene activado,
+  // se muestra un aviso en vez del contenido real de esa página.
+  const itemActual = NAV.find((n) => isActive(n.href));
+  const moduloBloqueado = itemActual?.modulo && !branding.modulosActivos.includes(itemActual.modulo)
+    ? itemActual : null;
+
+  const IconLock = () => (
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/>
+    </svg>
+  );
+
   return (
-    <div className="min-h-screen bg-[#0a0a0a] flex overflow-x-hidden">
+    <div className="min-h-screen bg-[#0a0a0a] flex overflow-x-hidden"
+      style={{ "--club-accent": hexToRgbTriplet(branding.colorAcento) } as React.CSSProperties}>
 
       {/* ── DESKTOP SIDEBAR ─────────────────────── */}
       <aside className="hidden lg:flex flex-col w-56 bg-[#0d0d0d] border-r border-white/[0.06] fixed h-full z-20">
         <div className="px-5 py-5 border-b border-white/[0.06]">
           <div className="flex items-center gap-2.5">
-            <Image src="/icon-192.png" alt="Panteras" width={32} height={32} className="rounded-full" />
+            <Image src={branding.logoUrl} alt={branding.nombre} width={32} height={32} className="rounded-full" />
             <div>
-              <p className="text-white font-bold text-sm leading-tight" style={{ fontFamily: "Syne, sans-serif" }}>Panteras</p>
+              <p className="text-white font-bold text-sm leading-tight" style={{ fontFamily: "Syne, sans-serif" }}>{branding.nombre}</p>
               <p className="text-pantera-green text-[10px] font-bold uppercase tracking-widest">Panel admin</p>
             </div>
           </div>
         </div>
 
         <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
-          {NAV.map((item) => (
-            <Link key={item.href} href={item.href}
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${
-                isActive(item.href)
-                  ? "bg-pantera-green/10 text-pantera-green border border-pantera-green/20"
-                  : "text-gray-500 hover:text-white hover:bg-white/[0.04]"
-              }`}>
-              <span className={isActive(item.href) ? "text-pantera-green" : "text-gray-600"}>{item.icon}</span>
-              {item.label}
-            </Link>
-          ))}
+          {NAV.map((item) => {
+            const disponible = tieneModulo(item);
+            return (
+              <Link key={item.href} href={item.href}
+                className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${
+                  !disponible
+                    ? "text-gray-700 hover:text-gray-500 hover:bg-white/[0.02]"
+                    : isActive(item.href)
+                    ? "bg-pantera-green/10 text-pantera-green border border-pantera-green/20"
+                    : "text-gray-500 hover:text-white hover:bg-white/[0.04]"
+                }`}>
+                <span className={!disponible ? "text-gray-700" : isActive(item.href) ? "text-pantera-green" : "text-gray-600"}>{item.icon}</span>
+                <span className="flex-1">{item.label}</span>
+                {!disponible && <IconLock />}
+              </Link>
+            );
+          })}
         </nav>
 
         <div className="px-3 py-4 border-t border-white/[0.06] space-y-0.5">
@@ -244,20 +285,36 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
       {/* ── MAIN CONTENT ────────────────────────── */}
       <main className="flex-1 lg:ml-56 pt-[52px] pb-20 lg:pt-0 lg:pb-0 min-h-screen overflow-x-hidden">
-        {children}
+        {moduloBloqueado ? (
+          <div className="flex flex-col items-center justify-center text-center px-6 py-24">
+            <div className="w-14 h-14 rounded-2xl bg-white/[0.04] border border-white/[0.08] flex items-center justify-center mb-5 text-gray-500">
+              <IconLock />
+            </div>
+            <h2 className="text-white font-bold text-lg mb-2" style={{ fontFamily: "Syne, sans-serif" }}>
+              {moduloBloqueado.label} no está incluido en tu plan
+            </h2>
+            <p className="text-gray-500 text-sm max-w-sm">
+              Contacta al administrador del sistema si quieres agregar este módulo a {branding.nombre}.
+            </p>
+          </div>
+        ) : children}
       </main>
 
       {/* ── MOBILE BOTTOM NAV ───────────────────── */}
       <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-30 bg-[#0d0d0d] border-t border-white/[0.06] flex items-stretch h-16">
         {pinnedItems.map((item) => {
           const active = isActive(item.href);
+          const disponible = tieneModulo(item);
           return (
             <Link key={item.href} href={item.href}
-              className={`flex-1 flex flex-col items-center justify-center gap-1 transition-all active:scale-95 ${
-                active ? "text-pantera-green" : "text-gray-600"
+              className={`relative flex-1 flex flex-col items-center justify-center gap-1 transition-all active:scale-95 ${
+                !disponible ? "text-gray-700" : active ? "text-pantera-green" : "text-gray-600"
               }`}>
-              <span className={active ? "text-pantera-green" : "text-gray-600"}>{item.icon}</span>
-              <span className={`text-[9px] font-semibold leading-none ${active ? "text-pantera-green" : "text-gray-600"}`}>
+              <span className="relative">
+                {item.icon}
+                {!disponible && <span className="absolute -top-1 -right-1.5 text-gray-600"><IconLock /></span>}
+              </span>
+              <span className={`text-[9px] font-semibold leading-none ${!disponible ? "text-gray-700" : active ? "text-pantera-green" : "text-gray-600"}`}>
                 {item.label === "Cuerpo Técnico" ? "Staff" : item.label}
               </span>
               {active && <span className="absolute bottom-0 w-8 h-0.5 bg-pantera-green rounded-t-full" />}
@@ -291,17 +348,23 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
             <p className="text-[9px] text-gray-600 uppercase tracking-widest px-3 py-1">Secciones</p>
 
-            {moreItems.map((item) => (
-              <Link key={item.href} href={item.href} onClick={() => setMasOpen(false)}
-                className={`flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-medium transition-all active:scale-[0.98] ${
-                  isActive(item.href)
-                    ? "bg-pantera-green/10 text-pantera-green border border-pantera-green/20"
-                    : "text-gray-400 hover:text-white hover:bg-white/[0.04]"
-                }`}>
-                <span className={isActive(item.href) ? "text-pantera-green" : "text-gray-600"}>{item.icon}</span>
-                {item.label}
-              </Link>
-            ))}
+            {moreItems.map((item) => {
+              const disponible = tieneModulo(item);
+              return (
+                <Link key={item.href} href={item.href} onClick={() => setMasOpen(false)}
+                  className={`flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-medium transition-all active:scale-[0.98] ${
+                    !disponible
+                      ? "text-gray-600"
+                      : isActive(item.href)
+                      ? "bg-pantera-green/10 text-pantera-green border border-pantera-green/20"
+                      : "text-gray-400 hover:text-white hover:bg-white/[0.04]"
+                  }`}>
+                  <span className={!disponible ? "text-gray-700" : isActive(item.href) ? "text-pantera-green" : "text-gray-600"}>{item.icon}</span>
+                  <span className="flex-1">{item.label}</span>
+                  {!disponible && <IconLock />}
+                </Link>
+              );
+            })}
 
             <div className="border-t border-white/[0.06] pt-2 mt-2 space-y-0.5">
               <a href="/" target="_blank"

@@ -339,7 +339,7 @@ export default function CobrosPage({ params }: { params: { id: string } }) {
       lines.push(`📊 Recaudado: $${recaudado.toLocaleString()} / $${esperado.toLocaleString()} (${pct}%)`);
     }
 
-    window.open(`https://wa.me/?text=${encodeURIComponent(lines.join("\n").trim())}`, "_blank");
+    window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(lines.join("\n").trim())}`, "_blank");
   };
 
   // Genera imagen PNG del resumen y la comparte / descarga

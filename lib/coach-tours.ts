@@ -57,7 +57,7 @@ export const AVISOS_STEPS: TourStep[] = [
   },
   {
     title: "Datos del aviso",
-    body: "Llena la liga, rival, día, horario, lugar y uniforme. Si tienes más de una categoría, selecciona a cuál aplica para que el partido se registre correctamente y puedas pasar lista después.",
+    body: "Elige la liga o copa (o crea una nueva ahí mismo), y llena rival, día, horario, lugar y uniforme. Si tienes más de una categoría, selecciona a cuál aplica para que el partido se registre correctamente y puedas pasar lista después.",
     targetId: "tour-avisos-form",
   },
   {
@@ -163,8 +163,8 @@ export const COBROS_STEPS: TourStep[] = [
 
 export const PARTIDOS_COACH_STEPS: TourStep[] = [
   {
-    title: "Historial de partidos",
-    body: "Lista todos los partidos de tus categorías ordenados por fecha. Muestra el resultado, la asistencia registrada y el porcentaje. Los partidos se crean desde la sección 'Avisos'.",
+    title: "Historial agrupado por liga",
+    body: "Los partidos se agrupan por liga o copa, cada una con su propia tabla de estadísticas (partidos jugados, ganados-empatados-perdidos, goles a favor/en contra y puntos). Usa '+ Liga/Copa' para crear, renombrar o archivar. Los partidos se crean desde la sección 'Avisos'.",
     targetId: "tour-coach-partidos-lista",
   },
   {
@@ -173,6 +173,6 @@ export const PARTIDOS_COACH_STEPS: TourStep[] = [
   },
   {
     title: "Ver detalle del partido",
-    body: "Toca la tarjeta (fuera de los botones de acción) para ver el detalle completo: quiénes asistieron al partido, el resultado y las estadísticas.",
+    body: "Toca la tarjeta (fuera de los botones de acción) para ver el detalle completo: quiénes asistieron al partido, el marcador y las estadísticas acumuladas de la liga.",
   },
 ];

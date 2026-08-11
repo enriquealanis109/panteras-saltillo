@@ -9,9 +9,10 @@ type TipoAviso    = "partido" | "cancelacion" | "general";
 type FasePartido  = "amistoso" | "jornada" | "cuartos" | "semifinal" | "final" | "repechaje" | "";
 
 interface Jugador { id: string; nombre: string; alias: string | null }
+interface Liga { id: string; nombre: string; tipo: string }
 
 interface Partido {
-  liga: string;
+  liga_id: string;
   rival: string;
   fase: FasePartido;
   jornada: string;
@@ -20,6 +21,7 @@ interface Partido {
   horaJuego: string;
   lugar: string;
   uniforme: string;
+  nota: string;
   convocatoria: boolean;
   convocados: string[];
 }
@@ -39,8 +41,8 @@ const FASES: { value: FasePartido; label: string; emoji?: string }[] = [
 ];
 
 const DEFAULT_PARTIDO: Partido = {
-  liga: "", rival: "", fase: "", jornada: "1",
-  dia: "Viernes", horaCita: "16:30", horaJuego: "17:00", lugar: "", uniforme: "verde",
+  liga_id: "", rival: "", fase: "", jornada: "1",
+  dia: "Viernes", horaCita: "16:30", horaJuego: "17:00", lugar: "", uniforme: "verde", nota: "",
   convocatoria: false, convocados: [],
 };
 
@@ -73,6 +75,11 @@ export default function AvisosPage() {
   const [guardado, setGuardado]   = useState(false);
   const [errGuardado, setErrGuardado] = useState("");
 
+  const [ligas, setLigas]         = useState<Liga[]>([]);
+  const [nuevaLiga, setNuevaLiga] = useState("");
+  const [creandoLiga, setCreandoLiga] = useState(false);
+  const [errLiga, setErrLiga]     = useState("");
+
   useEffect(() => { setGuardado(false); setErrGuardado(""); }, [partidos, catId]);
 
   useEffect(() => {
@@ -102,6 +109,36 @@ export default function AvisosPage() {
     };
     fetchJugs();
   }, [catId, cats]);
+
+  // Carga ligas/copas de la categoría seleccionada
+  useEffect(() => {
+    const selectedCat = cats.length === 1 ? cats[0]?.id : catId;
+    if (!selectedCat) { setLigas([]); return; }
+    const fetchLigas = async () => {
+      const { data } = await supabase
+        .from("ligas").select("id, nombre, tipo")
+        .eq("categoria_id", selectedCat).eq("activo", true).order("nombre");
+      setLigas(data ?? []);
+    };
+    fetchLigas();
+  }, [catId, cats]);
+
+  const crearLiga = async () => {
+    const nombre = nuevaLiga.trim();
+    const selectedCat = cats.length === 1 ? cats[0]?.id : catId;
+    if (!nombre || !selectedCat || creandoLiga) return;
+    setCreandoLiga(true);
+    setErrLiga("");
+    const { data, error } = await supabase.from("ligas")
+      .insert({ categoria_id: selectedCat, nombre, tipo: "liga" })
+      .select("id, nombre, tipo").single();
+    setCreandoLiga(false);
+    if (error) { setErrLiga("Esa liga ya existe"); return; }
+    if (data) {
+      setLigas((prev) => [...prev, data].sort((a, b) => a.nombre.localeCompare(b.nombre)));
+      setNuevaLiga("");
+    }
+  };
 
   const updatePartido = (i: number, field: keyof Partido, value: string) =>
     setPartidos((prev) => prev.map((p, idx) => idx === i ? { ...p, [field]: value } : p));
@@ -154,8 +191,10 @@ export default function AvisosPage() {
     const fase = fmtFase(p);
     const lines: string[] = [];
 
+    const ligaNombre = ligas.find((l) => l.id === p.liga_id)?.nombre;
+
     if (fase) lines.push(fase);
-    if (p.liga) lines.push(p.liga.toUpperCase());
+    if (ligaNombre) lines.push(ligaNombre.toUpperCase());
     if (p.rival) lines.push(`vs ${p.rival.toUpperCase()}`);
     lines.push("");
     lines.push(p.dia.toUpperCase());
@@ -165,6 +204,10 @@ export default function AvisosPage() {
     lines.push(`Lugar: ${p.lugar ? p.lugar.toUpperCase() : "[LUGAR]"}`);
     lines.push("");
     lines.push(`UNIFORME ${uni.label.toUpperCase()} ${uni.emoji}`);
+
+    if (p.nota.trim()) {
+      lines.push("", `*${p.nota.trim()}*`);
+    }
 
     if (p.convocatoria && p.convocados.length > 0) {
       const ordenados = jugadores.filter((j) => p.convocados.includes(j.id));
@@ -215,7 +258,7 @@ export default function AvisosPage() {
       for (const p of partidos) {
         const { data: part } = await supabase.from("partidos").insert({
           categoria_id: selectedCat,
-          liga:       p.liga  || "Sin liga",
+          liga_id:    p.liga_id || null,
           rival:      p.rival || null,
           lugar:      p.lugar || null,
           fecha:      nextDate(p.dia),
@@ -253,7 +296,7 @@ export default function AvisosPage() {
 
   const enviarWhatsApp = async () => {
     if (tipo === "partido") await guardarEnBD();
-    window.open(`https://wa.me/?text=${encodeURIComponent(mensaje)}`, "_blank");
+    window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(mensaje)}`, "_blank");
   };
 
   const input = "input-theme min-w-0 text-sm";
@@ -308,6 +351,26 @@ export default function AvisosPage() {
               </div>
             )}
 
+            {/* Alta rápida de liga/copa */}
+            {(cats.length <= 1 || catId) && (
+              <div>
+                <label className="text-xs uppercase tracking-widest block mb-1.5" style={{ color: "var(--text-secondary)" }}>
+                  Nueva liga / copa <span className="normal-case tracking-normal" style={{ color: "var(--text-muted)" }}>(opcional)</span>
+                </label>
+                <div className="flex items-center gap-2">
+                  <input className={input} placeholder="Ej: Liga Rayados"
+                    value={nuevaLiga} onChange={(e) => { setNuevaLiga(e.target.value); setErrLiga(""); }}
+                    onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); crearLiga(); } }} />
+                  <button onClick={crearLiga} disabled={!nuevaLiga.trim() || creandoLiga}
+                    className="flex-shrink-0 px-4 py-3 rounded-xl text-sm font-bold link-muted-theme border disabled:opacity-50 transition-all"
+                    style={{ borderColor: "var(--border-strong)" }}>
+                    {creandoLiga ? "..." : "Crear"}
+                  </button>
+                </div>
+                {errLiga && <p className="text-[11px] mt-1.5 text-red-400">{errLiga}</p>}
+              </div>
+            )}
+
             {partidos.map((p, i) => (
               <div key={i} className="rounded-2xl border p-4 space-y-4" style={{ borderColor: "var(--border-subtle)", background: "var(--bg-surface-1)" }}>
 
@@ -324,9 +387,21 @@ export default function AvisosPage() {
                 </div>
 
                 <div>
-                  <label className="text-xs uppercase tracking-widest block mb-1.5" style={{ color: "var(--text-secondary)" }}>Liga / Torneo</label>
-                  <input className={input} placeholder="Ej: LIGA INTER"
-                    value={p.liga} onChange={(e) => updatePartido(i, "liga", e.target.value)} />
+                  <label className="text-xs uppercase tracking-widest block mb-1.5" style={{ color: "var(--text-secondary)" }}>Liga / Copa</label>
+                  <select className={input} value={p.liga_id} onChange={(e) => updatePartido(i, "liga_id", e.target.value)}
+                    style={{ backgroundImage: "none" }}>
+                    <option value="" style={{ background: "var(--bg-alt)" }}>Sin liga</option>
+                    {ligas.map((l) => (
+                      <option key={l.id} value={l.id} style={{ background: "var(--bg-alt)" }}>
+                        {l.tipo === "copa" ? "🏆 " : ""}{l.nombre}
+                      </option>
+                    ))}
+                  </select>
+                  {ligas.length === 0 && (
+                    <p className="text-[11px] mt-1.5" style={{ color: "var(--text-muted)" }}>
+                      Aún no tienes ligas registradas para esta categoría — créala abajo.
+                    </p>
+                  )}
                 </div>
 
                 <div>
@@ -421,6 +496,17 @@ export default function AvisosPage() {
                   <label className="text-xs uppercase tracking-widest block mb-1.5" style={{ color: "var(--text-secondary)" }}>Lugar</label>
                   <input className={input} placeholder="Ej: CANCHA INTER"
                     value={p.lugar} onChange={(e) => updatePartido(i, "lugar", e.target.value)} />
+                </div>
+
+                <div>
+                  <label className="text-xs uppercase tracking-widest block mb-1.5" style={{ color: "var(--text-secondary)" }}>
+                    Nota <span className="normal-case tracking-normal" style={{ color: "var(--text-muted)" }}>(opcional)</span>
+                  </label>
+                  <textarea rows={2} className={`${input} resize-none`} placeholder="Ej: Llevar los dos uniformes"
+                    value={p.nota} onChange={(e) => updatePartido(i, "nota", e.target.value)} />
+                  <p className="text-[11px] mt-1.5" style={{ color: "var(--text-muted)" }}>
+                    Se agrega al final del mensaje, resaltada en negritas.
+                  </p>
                 </div>
 
                 {/* ── CONVOCATORIA ── */}

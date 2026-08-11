@@ -94,7 +94,7 @@ function ConfirmacionContent() {
               <p className="text-gray-400 text-sm">Canchas del Colegio Vivir · Carretera Los González Km 1, Los Tulipanes, 25297 Saltillo, Coah.</p>
             </div>
 
-            <a href={`https://wa.me/528445028582?text=${encodeURIComponent(mensajeWhatsapp)}`} target="_blank" rel="noopener noreferrer"
+            <a href={`https://api.whatsapp.com/send?phone=528445028582&text=${encodeURIComponent(mensajeWhatsapp)}`} target="_blank" rel="noopener noreferrer"
               className="btn-primary w-full flex items-center justify-center gap-2">
               Enviar comprobante por WhatsApp
             </a>

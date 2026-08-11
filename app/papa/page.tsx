@@ -13,7 +13,8 @@ interface Partido {
   lugar?: string;
   liga?: string;
   uniforme?: string;
-  resultado?: string | null;
+  goles_favor?: number | null;
+  goles_contra?: number | null;
   categoria_nombre?: string;
   confirmacion: "pendiente" | "asiste" | "no_asiste";
   confirmadas: number;
@@ -36,15 +37,8 @@ const fmtHora = (h: string | null) => {
   return `${n > 12 ? n - 12 : n}:${min} ${n >= 12 ? "PM" : "AM"}`;
 };
 
-const parseResultado = (r: string | null | undefined) => {
-  if (!r) return null;
-  const parts = r.split("-").map((s) => parseInt(s.trim()));
-  if (parts.length < 2 || isNaN(parts[0]) || isNaN(parts[1])) return null;
-  return { p: parts[0], v: parts[1] };
-};
-
-const resultTipo = (r: { p: number; v: number }) =>
-  r.p > r.v ? "victoria" : r.p === r.v ? "empate" : "derrota";
+const resultTipo = (gf: number, gc: number) =>
+  gf > gc ? "victoria" : gf === gc ? "empate" : "derrota";
 
 const uniformeDot = (uni: string | undefined) => {
   if (uni === "verde")  return "bg-pantera-green";
@@ -81,9 +75,10 @@ export default function PapaPage() {
         hora_juego:      c.partido.hora_juego ?? null,
         rival:           c.partido.rival ?? undefined,
         lugar:           c.partido.lugar ?? undefined,
-        liga:            c.partido.liga ?? undefined,
+        liga:            c.partido.ligas?.nombre ?? undefined,
         uniforme:        c.partido.uniforme ?? undefined,
-        resultado:       c.partido.resultado ?? null,
+        goles_favor:     c.partido.goles_favor ?? null,
+        goles_contra:    c.partido.goles_contra ?? null,
         categoria_nombre: catNombre,
         confirmacion:    (c.estado ?? "pendiente") as Partido["confirmacion"],
         confirmadas:     c.confirmadas ?? 0,
@@ -397,8 +392,8 @@ export default function PapaPage() {
           <div>
             <p className="text-gray-500 text-xs uppercase tracking-widest mb-3">Partidos pasados</p>
             {pasados.map((pt) => {
-              const res = parseResultado(pt.resultado);
-              const tipo = res ? resultTipo(res) : null;
+              const tieneResultado = pt.goles_favor !== null && pt.goles_favor !== undefined && pt.goles_contra !== null && pt.goles_contra !== undefined;
+              const tipo = tieneResultado ? resultTipo(pt.goles_favor!, pt.goles_contra!) : null;
               return (
                 <div key={pt.id} className="bg-white/[0.03] border border-white/[0.07] rounded-xl p-4 mb-2">
                   <div className="flex items-start justify-between gap-3">
@@ -415,14 +410,14 @@ export default function PapaPage() {
                       </p>
                     </div>
 
-                    {res && tipo ? (
+                    {tieneResultado && tipo ? (
                       <div className="text-right flex-shrink-0">
                         <p className={`text-xl font-bold tabular-nums ${
                           tipo === "victoria" ? "text-pantera-green"
                           : tipo === "empate"  ? "text-gray-400"
                           : "text-red-400"
                         }`}>
-                          {res.p} - {res.v}
+                          {pt.goles_favor} - {pt.goles_contra}
                         </p>
                         <p className={`text-[10px] font-semibold uppercase tracking-wide ${
                           tipo === "victoria" ? "text-pantera-green/70"

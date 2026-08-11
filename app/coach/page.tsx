@@ -6,6 +6,7 @@ import Image from "next/image";
 import { PanelTour } from "@/components/admin/PanelTour";
 import { DASHBOARD_STEPS } from "@/lib/coach-tours";
 import ThemeToggle from "@/components/ThemeToggle";
+import { useClub } from "@/lib/club-context";
 
 const DIAS  = ["Domingo","Lunes","Martes","Miércoles","Jueves","Viernes","Sábado"];
 const MESES = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
@@ -28,6 +29,8 @@ function KPICard({ label, value, sub, color, icon }: {
 
 export default function CoachDashboard() {
   const router = useRouter();
+  const { logoUrl, modulosActivos } = useClub();
+  const tiene = (m: string) => modulosActivos.includes(m);
   const [nombre, setNombre]         = useState("");
   const [catStats, setCatStats]     = useState<CatStat[]>([]);
   const [rol, setRol]               = useState<Rol>("entrenador");
@@ -35,6 +38,13 @@ export default function CoachDashboard() {
   const [loading, setLoading]       = useState(true);
   const [menuOpen, setMenuOpen]     = useState(false);
   const [esPadre, setEsPadre]       = useState(false);
+  const [avisoModulo, setAvisoModulo] = useState("");
+
+  const irOModulo = (href: string, modulo: string, label: string) => {
+    if (tiene(modulo)) { router.push(href); return; }
+    setAvisoModulo(`${label} no está incluido en tu plan. Contacta al administrador del sistema para activarlo.`);
+    setTimeout(() => setAvisoModulo(""), 3500);
+  };
 
   const hoy      = new Date().toLocaleDateString("sv-SE", { timeZone: "America/Monterrey" });
   const diaLabel = `${DIAS[new Date().getDay()]} ${new Date().getDate()} de ${MESES[new Date().getMonth()]}`;
@@ -134,10 +144,17 @@ export default function CoachDashboard() {
   return (
     <div className="min-h-screen overflow-x-hidden w-full pb-12" style={{ background: "var(--bg-page)" }}>
 
+      {avisoModulo && (
+        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[60] px-5 py-3 rounded-xl text-sm font-semibold shadow-xl max-w-[90vw] text-center"
+          style={{ background: "var(--bg-alt)", border: "1px solid var(--border-strong)", color: "var(--text-primary)" }}>
+          {avisoModulo}
+        </div>
+      )}
+
       {/* Header sticky */}
       <header className="border-b px-4 py-3 flex items-center justify-between sticky top-0 z-20" style={{ background: "var(--bg-alt)", borderColor: "var(--border-subtle)" }}>
         <div className="flex items-center gap-3">
-          <Image src="/icon-192.png" alt="Panteras" width={36} height={36} className="rounded-full" />
+          <Image src={logoUrl} alt="" width={36} height={36} className="rounded-full" />
           <div>
             <p className="font-bold text-sm leading-tight" style={{ fontFamily: "Syne, sans-serif", color: "var(--text-primary)" }}>{nombre}</p>
             <div className="flex items-center gap-1.5">
@@ -169,10 +186,14 @@ export default function CoachDashboard() {
             <div className="absolute right-0 top-11 border rounded-xl shadow-2xl w-48 py-1 z-50"
               style={{ background: "var(--bg-alt)", borderColor: "var(--border-strong)" }}
               onClick={() => setMenuOpen(false)}>
-              <a href="/" className="link-muted-theme block px-4 py-3 text-sm transition-colors">Ver sitio</a>
+              {tiene("sitio_publico") && (
+                <a href="/" className="link-muted-theme block px-4 py-3 text-sm transition-colors">Ver sitio</a>
+              )}
               {esAdmin && <>
                 <button onClick={() => router.push("/admin")} className="link-muted-theme w-full text-left px-4 py-3 text-sm transition-colors">Panel admin</button>
-                <button onClick={() => router.push("/coach/stats")} className="link-muted-theme w-full text-left px-4 py-3 text-sm transition-colors">Métricas</button>
+                {tiene("metricas") && (
+                  <button onClick={() => router.push("/coach/stats")} className="link-muted-theme w-full text-left px-4 py-3 text-sm transition-colors">Métricas</button>
+                )}
               </>}
               {esCoordinador && (
                 <button onClick={() => window.open("/manual-coordinador.pdf", "_blank")} className="w-full text-left px-4 py-3 text-blue-400 hover:text-blue-300 text-sm transition-colors flex items-center gap-2">
@@ -275,13 +296,16 @@ export default function CoachDashboard() {
           <div>
             <p className="text-[10px] uppercase tracking-widest mb-3" style={{ color: "var(--text-muted)" }}>Acciones rápidas</p>
             <div id="tour-coach-acciones" className="grid grid-cols-4 gap-2">
-              <button onClick={() => router.push("/coach/avisos")}
-                className="flex flex-col items-center gap-2 py-4 rounded-xl bg-pantera-green/10 border border-pantera-green/20 hover:bg-pantera-green/20 active:scale-95 transition-all">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="#22c55e"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
-                <span className="text-[11px] font-bold text-pantera-green">Avisos</span>
+              <button onClick={() => irOModulo("/coach/avisos", "avisos", "Avisos")}
+                className={`relative flex flex-col items-center gap-2 py-4 rounded-xl border active:scale-95 transition-all ${
+                  tiene("avisos") ? "bg-pantera-green/10 border-pantera-green/20 hover:bg-pantera-green/20" : "border-white/5 opacity-40"
+                }`}>
+                <svg width="22" height="22" viewBox="0 0 24 24" fill={tiene("avisos") ? "#22c55e" : "currentColor"} style={!tiene("avisos") ? { color: "var(--text-muted)" } : undefined}><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+                <span className={`text-[11px] font-bold ${tiene("avisos") ? "text-pantera-green" : ""}`} style={!tiene("avisos") ? { color: "var(--text-muted)" } : undefined}>Avisos</span>
               </button>
-              <button onClick={() => router.push("/coach/partidos")}
-                className="flex flex-col items-center gap-2 py-4 rounded-xl border hover:border-white/15 active:scale-95 transition-all" style={{ background: "var(--bg-surface-1)", borderColor: "var(--border-subtle)" }}>
+              <button onClick={() => irOModulo("/coach/partidos", "partidos", "Partidos")}
+                className={`flex flex-col items-center gap-2 py-4 rounded-xl border hover:border-white/15 active:scale-95 transition-all ${!tiene("partidos") ? "opacity-40" : ""}`}
+                style={{ background: "var(--bg-surface-1)", borderColor: "var(--border-subtle)" }}>
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" style={{ stroke: "var(--text-secondary)" }} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 000 20"/><path d="M2 12h20"/></svg>
                 <span className="text-[11px] font-semibold" style={{ color: "var(--text-secondary)" }}>Partidos</span>
               </button>
@@ -291,13 +315,14 @@ export default function CoachDashboard() {
                   <svg width="22" height="22" viewBox="0 0 24 24" fill="none" style={{ stroke: "var(--text-secondary)" }} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
                   <span className="text-[11px] font-semibold" style={{ color: "var(--text-secondary)" }}>Admin</span>
                 </button>
-                <button onClick={() => router.push("/coach/stats")}
-                  className="flex flex-col items-center gap-2 py-4 rounded-xl border hover:border-white/15 active:scale-95 transition-all" style={{ background: "var(--bg-surface-1)", borderColor: "var(--border-subtle)" }}>
+                <button onClick={() => irOModulo("/coach/stats", "metricas", "Métricas")}
+                  className={`flex flex-col items-center gap-2 py-4 rounded-xl border hover:border-white/15 active:scale-95 transition-all ${!tiene("metricas") ? "opacity-40" : ""}`}
+                  style={{ background: "var(--bg-surface-1)", borderColor: "var(--border-subtle)" }}>
                   <svg width="22" height="22" viewBox="0 0 24 24" fill="none" style={{ stroke: "var(--text-secondary)" }} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
                   <span className="text-[11px] font-semibold" style={{ color: "var(--text-secondary)" }}>Métricas</span>
                 </button>
               </>}
-              {!esAdmin && (
+              {!esAdmin && tiene("sitio_publico") && (
                 <button onClick={() => window.open("/", "_blank")}
                   className="flex flex-col items-center gap-2 py-4 rounded-xl border hover:border-white/15 active:scale-95 transition-all" style={{ background: "var(--bg-surface-1)", borderColor: "var(--border-subtle)" }}>
                   <svg width="22" height="22" viewBox="0 0 24 24" fill="none" style={{ stroke: "var(--text-secondary)" }} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg>

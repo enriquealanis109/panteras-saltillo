@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { supabase, type Jugador, type Asistencia } from "@/lib/supabase";
 import { PanelTour } from "@/components/admin/PanelTour";
 import { MENSUAL_STEPS } from "@/lib/coach-tours";
+import { useClub } from "@/lib/club-context";
 
 const MESES = ["Enero","Febrero","Marzo","Abril","Mayo","Junio",
                "Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
@@ -33,6 +34,7 @@ interface Resumen {
 }
 
 export default function MensualPage({ params }: { params: { id: string } }) {
+  const { logoUrl } = useClub();
   const categoriaId = params.id;
   const router = useRouter();
 
@@ -110,7 +112,7 @@ export default function MensualPage({ params }: { params: { id: string } }) {
       const logoX = (W - logoSize) / 2;
       let logoBase64 = "";
       try {
-        const resp = await fetch("/icon-192.png");
+        const resp = await fetch(logoUrl);
         const blob = await resp.blob();
         logoBase64 = await new Promise<string>((res) => {
           const r = new FileReader();

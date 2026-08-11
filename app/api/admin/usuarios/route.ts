@@ -12,7 +12,12 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Faltan campos obligatorios." }, { status: 400 });
   }
 
-  const email = `${usuario.trim().toLowerCase()}@panteras.coach`;
+  const { data: club } = await admin.from("clubes").select("slug").eq("id", auth.clubId).single();
+  if (!club) {
+    return NextResponse.json({ error: "Club no encontrado." }, { status: 400 });
+  }
+
+  const email = `${usuario.trim().toLowerCase()}@${club.slug}.coach`;
 
   const { data, error } = await admin.auth.admin.createUser({
     email,
@@ -26,16 +31,29 @@ export async function POST(req: NextRequest) {
 
   const id = data.user.id;
 
-  const { error: dbErr } = await admin.from("entrenadores").insert({ id, nombre: nombre.trim(), rol });
+  const { error: dbErr } = await admin
+    .from("entrenadores")
+    .insert({ id, nombre: nombre.trim(), rol, club_id: auth.clubId });
   if (dbErr) {
     await admin.auth.admin.deleteUser(id);
     return NextResponse.json({ error: dbErr.message }, { status: 400 });
   }
 
   if (categorias?.length > 0) {
-    await admin.from("entrenador_categorias").insert(
-      categorias.map((cat_id: string) => ({ entrenador_id: id, categoria_id: cat_id }))
-    );
+    // Nunca confiar en los ids que manda el cliente: solo se enlazan categorías
+    // que de verdad son del mismo club que el admin que está creando el usuario.
+    const { data: categoriasDelClub } = await admin
+      .from("categorias")
+      .select("id")
+      .eq("club_id", auth.clubId)
+      .in("id", categorias);
+
+    const idsValidos = (categoriasDelClub ?? []).map((c) => c.id);
+    if (idsValidos.length > 0) {
+      await admin.from("entrenador_categorias").insert(
+        idsValidos.map((cat_id: string) => ({ entrenador_id: id, categoria_id: cat_id }))
+      );
+    }
   }
 
   return NextResponse.json({ id });

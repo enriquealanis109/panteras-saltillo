@@ -39,7 +39,7 @@ export async function GET(req: NextRequest) {
   const [partRes, confsRes, padresRes, asistRes] = await Promise.all([
     supabaseAdmin
       .from("partidos")
-      .select("id, fecha, hora_juego, rival, lugar, liga, uniforme, resultado")
+      .select("id, fecha, hora_juego, rival, lugar, uniforme, goles_favor, goles_contra, ligas(nombre)")
       .in("id", partIds),
     supabaseAdmin
       .from("confirmaciones_partido")

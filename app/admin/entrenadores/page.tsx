@@ -38,6 +38,7 @@ export default function AdminEntrenadoresPage() {
   const [catMap, setCatMap]             = useState<Record<string, string[]>>({});
   const [catMapIds, setCatMapIds]       = useState<Record<string, string[]>>({});
   const [categorias, setCategorias]     = useState<Categoria[]>([]);
+  const [clubSlug, setClubSlug]         = useState("panteras");
   const [loading, setLoading]           = useState(true);
   const [saving, setSaving]             = useState(false);
   const [toast, setToast]               = useState("");
@@ -55,11 +56,18 @@ export default function AdminEntrenadoresPage() {
   const showToast = (msg: string) => { setToast(msg); setTimeout(() => setToast(""), 2500); };
 
   const cargar = async () => {
-    const [{ data: ents }, { data: rels }, { data: cats }] = await Promise.all([
+    const [{ data: ents }, { data: rels }, { data: cats }, { data: { user } }] = await Promise.all([
       supabase.from("entrenadores").select("*").order("nombre"),
       supabase.from("entrenador_categorias").select("entrenador_id, categoria_id"),
       supabase.from("categorias").select("id, nombre").order("nombre"),
+      supabase.auth.getUser(),
     ]);
+
+    const yo = (ents ?? []).find((e: Entrenador) => e.id === user?.id) as (Entrenador & { club_id?: string }) | undefined;
+    if (yo?.club_id) {
+      const { data: club } = await supabase.from("clubes").select("slug").eq("id", yo.club_id).single();
+      if (club) setClubSlug(club.slug);
+    }
 
     const catNombres: Record<string, string> = {};
     (cats ?? []).forEach((c: Categoria) => { catNombres[c.id] = c.nombre; });
@@ -206,7 +214,7 @@ export default function AdminEntrenadoresPage() {
                             onChange={(e) => setFUsuario(e.target.value.toLowerCase().replace(/\s/g, ""))}
                             placeholder="carlos.garcia"
                             className="flex-1 bg-transparent px-4 py-3 text-white placeholder-gray-600 focus:outline-none text-sm" />
-                          <span className="text-gray-600 text-xs pr-4 flex-shrink-0">@panteras.coach</span>
+                          <span className="text-gray-600 text-xs pr-4 flex-shrink-0">@{clubSlug}.coach</span>
                         </div>
                       </div>
                       <div>

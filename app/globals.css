@@ -8,6 +8,9 @@
    Solo el sitio público y componentes compartidos las consumen por ahora;
    el resto de la app sigue con sus colores fijos hasta convertirse.     */
 :root {
+  /* RGB (no hex) para que Tailwind pueda aplicarle opacidad — ej. bg-pantera-green/10.
+     Panteras usa el verde de siempre por default; admin/coach lo sobreescriben por club. */
+  --club-accent: 22 163 74;
   --bg-page: #0a0a0a;
   --bg-surface-1: rgba(255,255,255,0.03);
   --bg-surface-2: rgba(255,255,255,0.05);

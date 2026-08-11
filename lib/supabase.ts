@@ -6,11 +6,13 @@ export type TipoDoc     = "acta" | "curp" | "constancia" | "pasaporte" | "foto";
 export type TipoCobro   = "torneo" | "copa" | "actividad" | "otro";
 export type EstatusPago = "completo" | "pendiente" | "na";
 export type EstadoPedido = "pendiente_pago" | "pagado" | "listo" | "entregado" | "cancelado";
+export type TipoLiga     = "liga" | "copa";
 
-export interface Categoria      { id: string; nombre: string }
+export interface Club           { id: string; nombre: string; slug: string; activo: boolean }
+export interface Categoria      { id: string; nombre: string; club_id: string }
 export interface Jugador        { id: string; nombre: string; alias?: string; fecha_nacimiento: string; categoria_id: string; activo: boolean; foto_url?: string | null }
 export interface Asistencia     { id: string; jugador_id: string; entrenador_id: string; fecha: string; estado: Estado; nota?: string }
-export interface Entrenador     { id: string; nombre: string; rol: Rol }
+export interface Entrenador     { id: string; nombre: string; rol: Rol; club_id: string }
 export interface Documento      { id: string; jugador_id: string; tipo: TipoDoc; url: string; nombre_archivo?: string; created_at: string }
 export interface ConceptoCobro  { id: string; nombre: string; tipo: TipoCobro; categoria_id: string; monto?: number | null; activo: boolean; created_by?: string; created_at: string }
 export interface PagoJugador    { id: string; jugador_id: string; concepto_id: string; estatus: EstatusPago; monto_pagado: number; nota?: string; updated_at: string; updated_by?: string }
@@ -19,6 +21,8 @@ export interface Producto       { id: string; nombre: string; descripcion?: stri
 export interface ProductoVariante { id: string; producto_id: string; talla: string; color?: string | null; stock: number }
 export interface Pedido         { id: string; cliente_nombre: string; cliente_telefono: string; notas?: string | null; estado: EstadoPedido; total: number; created_at: string }
 export interface PedidoItem     { id: string; pedido_id: string; variante_id?: string | null; producto_nombre: string; talla: string; color?: string | null; cantidad: number; precio_unitario: number; personalizacion_nombre?: string | null; personalizacion_numero?: string | null }
+export interface Liga           { id: string; categoria_id: string; nombre: string; tipo: TipoLiga; activo: boolean }
+export interface AsistenciaPartido { id: string; partido_id: string; jugador_id: string; asistio: boolean | null }
 
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;

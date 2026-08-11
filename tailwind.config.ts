@@ -11,7 +11,10 @@ const config: Config = {
       colors: {
         pantera: {
           black: "#0a0a0a",
-          green: "#16a34a",
+          // Vía variable CSS (--club-accent, definida en globals.css y sobreescrita
+          // por club en admin/coach layouts) para que bg-pantera-green/10 etc. sigan
+          // funcionando igual, pero resolviendo al color de cada club.
+          green: "rgb(var(--club-accent) / <alpha-value>)",
           "green-light": "#22c55e",
           "green-dark": "#15803d",
           gray: "#111111",

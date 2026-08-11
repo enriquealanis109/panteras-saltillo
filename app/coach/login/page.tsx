@@ -3,8 +3,16 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import Image from "next/image";
+import { hexToRgbTriplet, DEFAULT_BRANDING } from "@/lib/club-context";
 
-const DOMAIN = "@panteras.coach";
+// Antes de iniciar sesión no sabemos a qué club pertenece el usuario, así que
+// la marca de esta pantalla viene de variables de entorno (una por despliegue
+// de Vercel), no de la base de datos. Panteras sigue igual porque no las tiene
+// configuradas y todas caen a su default de siempre.
+const CLUB_NOMBRE = process.env.NEXT_PUBLIC_CLUB_NOMBRE || "Panteras Saltillo";
+const CLUB_LOGO   = process.env.NEXT_PUBLIC_CLUB_LOGO_URL || DEFAULT_BRANDING.logoUrl;
+const CLUB_COLOR  = process.env.NEXT_PUBLIC_CLUB_COLOR || DEFAULT_BRANDING.colorAcento;
+const DOMAIN = process.env.NEXT_PUBLIC_CLUB_DOMAIN || "@panteras.coach";
 const STORAGE_KEY = "panteras_coach_usuario";
 
 export default function LoginPage() {
@@ -65,17 +73,18 @@ export default function LoginPage() {
   const input = "input-theme text-sm";
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-5" style={{ background: "var(--bg-page)" }}>
+    <div className="min-h-screen flex items-center justify-center px-5"
+      style={{ background: "var(--bg-page)", "--club-accent": hexToRgbTriplet(CLUB_COLOR) } as React.CSSProperties}>
       <div className="w-full max-w-sm">
 
         {/* Logo */}
         <div className="flex flex-col items-center mb-10">
-          <Image src="/icon-192.png" alt="Panteras" width={72} height={72}
+          <Image src={CLUB_LOGO} alt="" width={72} height={72}
             className="rounded-full mb-4" />
           <h1 className="font-bold text-xl" style={{ fontFamily: "Syne, sans-serif", color: "var(--text-primary)" }}>
-            Portal Panteras
+            Portal
           </h1>
-          <p className="text-sm mt-1" style={{ color: "var(--text-muted)" }}>Panteras Saltillo</p>
+          <p className="text-sm mt-1" style={{ color: "var(--text-muted)" }}>{CLUB_NOMBRE}</p>
         </div>
 
         {/* Form */}

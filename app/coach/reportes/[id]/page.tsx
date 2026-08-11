@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { supabase, type Jugador, type Asistencia, type Estado } from "@/lib/supabase";
 import { PanelTour } from "@/components/admin/PanelTour";
 import { REPORTES_STEPS } from "@/lib/coach-tours";
+import { useClub } from "@/lib/club-context";
 
 const BADGE: Record<Estado, { label: string; clase: string }> = {
   presente: { label: "P",  clase: "bg-green-500/20 text-[var(--status-good)] border-green-500/30" },
@@ -36,6 +37,7 @@ function calcPct(estados: (Estado | null)[]) {
 }
 
 export default function ReportesPage({ params }: { params: { id: string } }) {
+  const { logoUrl } = useClub();
   const categoriaId = params.id;
   const router = useRouter();
 
@@ -98,7 +100,7 @@ export default function ReportesPage({ params }: { params: { id: string } }) {
       // Cargar el escudo como base64
       let logoBase64 = "";
       try {
-        const resp = await fetch("/icon-192.png");
+        const resp = await fetch(logoUrl);
         const blob = await resp.blob();
         logoBase64 = await new Promise<string>((resolve) => {
           const reader = new FileReader();

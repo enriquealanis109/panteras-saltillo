@@ -21,17 +21,36 @@ export async function POST(req: NextRequest) {
 
   const objectPaths = paths.map((p: string) => pathFromUrlOrPath(p));
 
+  // auth.admin es el cliente service-role: se salta RLS por completo, así que
+  // aquí mismo hay que verificar que cada documento pedido sea de un jugador
+  // del club de quien lo pide — si no, no se genera signed URL para ese path.
+  const jugadorIds = Array.from(new Set(objectPaths.map((p) => p.split("/")[0])));
+  const { data: jugadoresDelClub } = await auth.admin
+    .from("jugadores")
+    .select("id")
+    .eq("club_id", auth.clubId)
+    .in("id", jugadorIds);
+
+  const idsPermitidos = new Set((jugadoresDelClub ?? []).map((j) => j.id));
+  const permitidos = objectPaths
+    .map((p, i) => ({ p, i }))
+    .filter(({ p }) => idsPermitidos.has(p.split("/")[0]));
+
+  if (permitidos.length === 0) {
+    return NextResponse.json({ urls: {} });
+  }
+
   const { data, error } = await auth.admin.storage
     .from("documentos")
-    .createSignedUrls(objectPaths, SIGNED_URL_TTL_SECONDS);
+    .createSignedUrls(permitidos.map(({ p }) => p), SIGNED_URL_TTL_SECONDS);
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 400 });
   }
 
   const urls: Record<string, string> = {};
-  data.forEach((d, i) => {
-    if (d.signedUrl) urls[paths[i]] = d.signedUrl;
+  data.forEach((d, idx) => {
+    if (d.signedUrl) urls[paths[permitidos[idx].i]] = d.signedUrl;
   });
 
   return NextResponse.json({ urls });

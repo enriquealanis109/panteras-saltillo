@@ -3,6 +3,8 @@ import { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { Toaster, toast } from "react-hot-toast";
+import { computeLigaStats } from "@/lib/liga-stats";
+import { useClub } from "@/lib/club-context";
 
 interface Jugador {
   id: string;
@@ -20,15 +22,20 @@ interface ConfPadre {
 
 interface Partido {
   id: string;
-  liga: string;
+  liga_id: string | null;
   rival: string | null;
   lugar: string | null;
   fecha: string | null;
   hora_juego: string | null;
   uniforme: string | null;
-  resultado: string | null;
+  goles_favor: number | null;
+  goles_contra: number | null;
+  fase: string | null;
   categoria_id: string;
 }
+
+interface LigaItem { id: string; nombre: string; tipo: string; categoria_id: string }
+interface SiblingPartido { id: string; goles_favor: number | null; goles_contra: number | null; fase: string | null }
 
 const MESES = ["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"];
 const MESES_LARGO = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
@@ -45,15 +52,10 @@ const fmtFechaLargo = (f: string | null) => {
   return `${parseInt(d)} de ${MESES_LARGO[parseInt(m) - 1]}`;
 };
 
-const parseResultado = (r: string | null): { p: string; r: string } => {
-  if (!r) return { p: "", r: "" };
-  const parts = r.split("-");
-  return { p: parts[0]?.trim() ?? "", r: parts[1]?.trim() ?? "" };
-};
-
 export default function PartidoDetallePage() {
   const router = useRouter();
   const { id } = useParams<{ id: string }>();
+  const { logoUrl } = useClub();
 
   const [partido, setPartido]         = useState<Partido | null>(null);
   const [jugadores, setJugadores]     = useState<Jugador[]>([]);
@@ -65,8 +67,11 @@ export default function PartidoDetallePage() {
   const [compartiendo, setCompartiendo] = useState(false);
   const [listaAbierta, setListaAbierta] = useState(false);
 
+  const [ligas, setLigas]             = useState<LigaItem[]>([]);
+  const [siblings, setSiblings]       = useState<SiblingPartido[]>([]);
+
   const [editOpen, setEditOpen]   = useState(false);
-  const [editLiga, setEditLiga]   = useState("");
+  const [editLigaId, setEditLigaId] = useState("");
   const [editRival, setEditRival] = useState("");
   const [editLugar, setEditLugar] = useState("");
   const [editFecha, setEditFecha] = useState("");
@@ -82,9 +87,16 @@ export default function PartidoDetallePage() {
       const { data: part } = await supabase.from("partidos").select("*").eq("id", id).single();
       if (!part) { setLoading(false); return; }
       setPartido(part);
-      const parsed = parseResultado(part.resultado);
-      setGolesP(parsed.p);
-      setGolesR(parsed.r);
+      setGolesP(part.goles_favor !== null ? String(part.goles_favor) : "");
+      setGolesR(part.goles_contra !== null ? String(part.goles_contra) : "");
+
+      const { data: ligasData } = await supabase.from("ligas").select("id, nombre, tipo, categoria_id").eq("categoria_id", part.categoria_id).order("nombre");
+      setLigas(ligasData ?? []);
+
+      if (part.liga_id) {
+        const { data: sibData } = await supabase.from("partidos").select("id, goles_favor, goles_contra, fase").eq("liga_id", part.liga_id);
+        setSiblings(sibData ?? []);
+      }
 
       const { data: asistData } = await supabase
         .from("asistencia_partidos")
@@ -148,8 +160,17 @@ export default function PartidoDetallePage() {
 
   const guardarTodo = async (): Promise<Jugador[]> => {
     if (!partido) return jugadores;
-    const resultadoStr = (golesP !== "" && golesR !== "") ? `${golesP}-${golesR}` : null;
-    await supabase.from("partidos").update({ resultado: resultadoStr }).eq("id", partido.id);
+    const gf = golesP !== "" ? parseInt(golesP) : null;
+    const gc = golesR !== "" ? parseInt(golesR) : null;
+    await supabase.from("partidos").update({ goles_favor: gf, goles_contra: gc }).eq("id", partido.id);
+    setSiblings((prev) => {
+      const idx = prev.findIndex((s) => s.id === partido.id);
+      const patched = { id: partido.id, goles_favor: gf, goles_contra: gc, fase: partido.fase };
+      if (idx === -1) return partido.liga_id ? [...prev, patched] : prev;
+      const next = [...prev];
+      next[idx] = patched;
+      return next;
+    });
 
     const updated = [...jugadores];
     for (let i = 0; i < updated.length; i++) {
@@ -173,6 +194,9 @@ export default function PartidoDetallePage() {
     setGuardando(false);
     toast.success("Partido guardado", { duration: 2500 });
   };
+
+  const nombreLiga = (ligaId: string | null) => ligas.find((l) => l.id === ligaId)?.nombre ?? "Sin liga";
+  const ligaStats = computeLigaStats(siblings);
 
   const compartirPDF = async () => {
     if (!partido) return;
@@ -212,7 +236,7 @@ export default function PartidoDetallePage() {
       // Logo centrado y grande
       let logoBase64 = "";
       try {
-        const resp = await fetch("/icon-192.png");
+        const resp = await fetch(logoUrl);
         const blob = await resp.blob();
         logoBase64 = await new Promise<string>((resolve) => {
           const reader = new FileReader();
@@ -251,7 +275,7 @@ export default function PartidoDetallePage() {
       doc.setFont("helvetica", "bold");
       doc.setFontSize(17);
       doc.setTextColor(0, 0, 0);
-      doc.text(partido.liga, W / 2, y, { align: "center" });
+      doc.text(nombreLiga(partido.liga_id), W / 2, y, { align: "center" });
       y += 9;
 
       // vs RIVAL — negro, muy grande, centrado
@@ -354,7 +378,7 @@ export default function PartidoDetallePage() {
         doc.text(`${i} / ${pages}`, W - margin, 290, { align: "right" });
       }
 
-      const slug = partido.liga.replace(/[^a-zA-Z0-9]/g, "_");
+      const slug = nombreLiga(partido.liga_id).replace(/[^a-zA-Z0-9]/g, "_");
       const fileName = `partido_${slug}_${partido.fecha ?? "sin_fecha"}.pdf`;
       const pdfBlob = doc.output("blob");
 
@@ -364,7 +388,7 @@ export default function PartidoDetallePage() {
         if (navigator.canShare({ files: [file] })) {
           await navigator.share({
             files: [file],
-            title: `Partido ${partido.liga}`,
+            title: `Partido ${nombreLiga(partido.liga_id)}`,
             text: detalles.join(" · "),
           });
           setCompartiendo(false);
@@ -385,7 +409,7 @@ export default function PartidoDetallePage() {
 
   const abrirEditor = () => {
     if (!partido) return;
-    setEditLiga(partido.liga);
+    setEditLigaId(partido.liga_id ?? "");
     setEditRival(partido.rival ?? "");
     setEditLugar(partido.lugar ?? "");
     setEditFecha(partido.fecha ?? "");
@@ -398,7 +422,7 @@ export default function PartidoDetallePage() {
     if (!partido) return;
     setEditSaving(true);
     const updates = {
-      liga:       editLiga.trim() || partido.liga,
+      liga_id:    editLigaId || null,
       rival:      editRival.trim() || null,
       lugar:      editLugar.trim() || null,
       fecha:      editFecha || null,
@@ -471,7 +495,7 @@ export default function PartidoDetallePage() {
         <button onClick={() => router.back()} className="link-muted-theme text-lg w-8 flex-shrink-0">←</button>
         <div className="min-w-0 flex-1">
           <h1 className="font-bold leading-tight truncate" style={{ fontFamily: "Syne, sans-serif", color: "var(--text-primary)" }}>
-            {partido.liga}
+            {nombreLiga(partido.liga_id)}
           </h1>
           <p className="text-[10px] truncate" style={{ color: "var(--text-muted)" }}>
             {partido.rival ? `vs ${partido.rival} · ` : ""}{fmtFecha(partido.fecha)}
@@ -692,6 +716,20 @@ export default function PartidoDetallePage() {
               </div>
             )}
           </div>
+
+          {partido.liga_id && ligaStats.pj > 0 && (
+            <div className="rounded-2xl p-4 mt-3 border" style={{ background: "var(--bg-surface-1)", borderColor: "var(--border-subtle)" }}>
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-[10px] uppercase tracking-widest font-bold" style={{ color: "var(--text-secondary)" }}>
+                  {nombreLiga(partido.liga_id)}
+                </span>
+                <span className="text-sm font-black text-[var(--status-good)]" style={{ fontFamily: "Syne, sans-serif" }}>{ligaStats.pts} pts</span>
+              </div>
+              <p className="text-xs" style={{ color: "var(--text-secondary)" }}>
+                PJ {ligaStats.pj} · {ligaStats.pg}G-{ligaStats.pe}E-{ligaStats.pp}P · GF:GC {ligaStats.gf}:{ligaStats.gc} ({ligaStats.dg >= 0 ? "+" : ""}{ligaStats.dg})
+              </p>
+            </div>
+          )}
         </div>
 
         {/* Acciones */}
@@ -725,8 +763,15 @@ export default function PartidoDetallePage() {
               <button onClick={() => setEditOpen(false)} disabled={editSaving} className="link-muted-theme text-xl w-8 h-8">×</button>
             </div>
             <div>
-              <label className="text-[10px] uppercase tracking-widest block mb-1.5" style={{ color: "var(--text-secondary)" }}>Liga / Torneo</label>
-              <input className={inputCls} value={editLiga} onChange={(e) => setEditLiga(e.target.value)} />
+              <label className="text-[10px] uppercase tracking-widest block mb-1.5" style={{ color: "var(--text-secondary)" }}>Liga / Copa</label>
+              <select className={inputCls} value={editLigaId} onChange={(e) => setEditLigaId(e.target.value)} style={{ backgroundImage: "none" }}>
+                <option value="" style={{ background: "var(--bg-alt)" }}>Sin liga</option>
+                {ligas.map((l) => (
+                  <option key={l.id} value={l.id} style={{ background: "var(--bg-alt)" }}>
+                    {l.tipo === "copa" ? "🏆 " : ""}{l.nombre}
+                  </option>
+                ))}
+              </select>
             </div>
             <div>
               <label className="text-[10px] uppercase tracking-widest block mb-1.5" style={{ color: "var(--text-secondary)" }}>Rival</label>
@@ -789,7 +834,7 @@ export default function PartidoDetallePage() {
               </div>
             </div>
             <p className="text-sm" style={{ color: "var(--text-secondary)" }}>
-              Se eliminará <span className="font-semibold" style={{ color: "var(--text-primary)" }}>{partido.liga}</span>
+              Se eliminará <span className="font-semibold" style={{ color: "var(--text-primary)" }}>{nombreLiga(partido.liga_id)}</span>
               {partido.rival ? <> vs <span className="font-semibold" style={{ color: "var(--text-primary)" }}>{partido.rival}</span></> : null}
               {" "}y toda su lista de asistencia.
             </p>

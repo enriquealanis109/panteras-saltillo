@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase, type Jugador } from "@/lib/supabase";
+import { useClub } from "@/lib/club-context";
 
 const BIMESTRES = [
   "Enero-Febrero", "Marzo-Abril", "Mayo-Junio",
@@ -38,6 +39,7 @@ function ScoreSelect({ label, value, onChange }: { label: string; value: number;
 }
 
 export default function EvaluarJugadorPage({ params }: { params: { id: string; jugadorId: string } }) {
+  const { logoUrl } = useClub();
   const { id: categoriaId, jugadorId } = params;
   const router = useRouter();
 
@@ -159,7 +161,7 @@ export default function EvaluarJugadorPage({ params }: { params: { id: string; j
       const logoX = (W - logoSize) / 2;
       let logoBase64 = "";
       try {
-        const resp = await fetch("/icon-192.png");
+        const resp = await fetch(logoUrl);
         const blob = await resp.blob();
         logoBase64 = await new Promise<string>((res) => {
           const r = new FileReader(); r.onloadend = () => res(r.result as string); r.readAsDataURL(blob);

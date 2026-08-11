@@ -143,7 +143,7 @@ export const ADMIN_TOURS: Record<string, PanelTourData> = {
       },
       {
         title: "Historial de partidos",
-        body: "Cada tarjeta muestra la liga, rival, fecha y el porcentaje de asistencia. El resultado aparece cuando el entrenador lo registra desde su portal de estadísticas.",
+        body: "Cada tarjeta muestra la liga o copa, rival, fecha y el porcentaje de asistencia. El marcador aparece cuando el entrenador lo registra desde su portal.",
         targetId: "tour-partidos-lista",
       },
       {

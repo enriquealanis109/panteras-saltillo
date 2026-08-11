@@ -5,13 +5,15 @@ import { supabase } from "@/lib/supabase";
 
 interface PartidoItem {
   id: string;
-  liga: string;
+  liga_id: string | null;
   rival: string | null;
   lugar: string | null;
   fecha: string | null;
-  resultado: string | null;
+  goles_favor: number | null;
+  goles_contra: number | null;
   categoria_id: string;
   cat_nombre: string;
+  liga_nombre: string;
   total: number;
   presentes: number;
 }
@@ -38,6 +40,10 @@ export default function AdminPartidosPage() {
       const catMap: Record<string, string> = {};
       (catsData ?? []).forEach((c: { id: string; nombre: string }) => { catMap[c.id] = c.nombre; });
 
+      const { data: ligasData } = await supabase.from("ligas").select("id, nombre");
+      const ligaMap: Record<string, string> = {};
+      (ligasData ?? []).forEach((l: { id: string; nombre: string }) => { ligaMap[l.id] = l.nombre; });
+
       const { data: parts } = await supabase.from("partidos").select("*")
         .order("fecha", { ascending: false })
         .order("created_at", { ascending: false });
@@ -58,6 +64,7 @@ export default function AdminPartidosPage() {
       setPartidos(parts.map((p: PartidoItem) => ({
         ...p,
         cat_nombre: catMap[p.categoria_id] ?? "—",
+        liga_nombre: ligaMap[p.liga_id ?? ""] ?? "Sin liga",
         total:     countMap[p.id]?.total    ?? 0,
         presentes: countMap[p.id]?.presentes ?? 0,
       })));
@@ -67,7 +74,7 @@ export default function AdminPartidosPage() {
   }, []);
 
   const filtered    = filtro === "todas" ? partidos : partidos.filter((p) => p.categoria_id === filtro);
-  const conResultado = filtered.filter((p) => p.resultado).length;
+  const conResultado = filtered.filter((p) => p.goles_favor !== null && p.goles_contra !== null).length;
   const totalAsist   = filtered.reduce((s, p) => s + p.total, 0);
   const totalPres    = filtered.reduce((s, p) => s + p.presentes, 0);
   const pctGlobal    = totalAsist > 0 ? Math.round((totalPres / totalAsist) * 100) : null;
@@ -118,7 +125,7 @@ export default function AdminPartidosPage() {
         <div id="tour-partidos-lista" className="space-y-3">
           {filtered.map((p) => {
             const pct = p.total > 0 ? Math.round((p.presentes / p.total) * 100) : null;
-            const sinLista = p.total > 0 && p.presentes === 0 && !p.resultado;
+            const sinLista = p.total > 0 && p.presentes === 0 && p.goles_favor === null;
             return (
               <div key={p.id}
                 onClick={() => router.push(`/coach/partidos/${p.id}`)}
@@ -128,7 +135,7 @@ export default function AdminPartidosPage() {
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2 flex-wrap mb-0.5">
                       <span className="text-white font-bold text-sm" style={{ fontFamily: "Syne, sans-serif" }}>
-                        {p.liga}
+                        {p.liga_nombre}
                       </span>
                       <span className="text-[9px] uppercase tracking-wider text-gray-600 bg-white/[0.04] px-2 py-0.5 rounded-full border border-white/[0.06]">
                         {p.cat_nombre}
@@ -141,9 +148,9 @@ export default function AdminPartidosPage() {
                   </div>
 
                   <div className="text-right flex-shrink-0 space-y-1">
-                    {p.resultado ? (
+                    {p.goles_favor !== null && p.goles_contra !== null ? (
                       <p className="text-pantera-green font-black text-lg leading-none" style={{ fontFamily: "Syne, sans-serif" }}>
-                        {p.resultado}
+                        {p.goles_favor}-{p.goles_contra}
                       </p>
                     ) : (
                       <span className="text-[10px] text-gray-600">Sin resultado</span>

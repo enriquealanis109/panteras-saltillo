@@ -49,8 +49,12 @@ export default function AdminCategoriaPage({ params }: { params: { id: string } 
   const [pAnio, setPAnio]         = useState(new Date().getFullYear());
 
   // Ligas
-  const [ligas, setLigas]         = useState<{ id: string; nombre: string; activo: boolean }[]>([]);
+  const [ligas, setLigas]         = useState<{ id: string; nombre: string; activo: boolean; tipo: string }[]>([]);
   const [lNombre, setLNombre]     = useState("");
+  const [lTipo, setLTipo]         = useState<"liga" | "copa">("liga");
+  const [renombrandoLiga, setRenombrandoLiga] = useState<string | null>(null);
+  const [renombreLiga, setRenombreLiga]       = useState("");
+  const [avisoLiga, setAvisoLiga] = useState<{ id: string; nombre: string; count: number } | null>(null);
 
   // Galería
   const [galeria, setGaleria]     = useState<{ id: string; tipo: string; url: string; titulo: string | null }[]>([]);
@@ -150,12 +154,28 @@ export default function AdminCategoriaPage({ params }: { params: { id: string } 
   // ── LIGAS ──
   const addLiga = async () => {
     if (!lNombre.trim()) return;
-    await supabase.from("ligas").insert({ categoria_id: categoriaId, nombre: lNombre.trim() });
+    const { error } = await supabase.from("ligas").insert({ categoria_id: categoriaId, nombre: lNombre.trim(), tipo: lTipo });
+    if (error) { showToast("Esa liga ya existe", false); return; }
     setLNombre(""); await cargar(); showToast("Liga agregada");
   };
-  const delLiga = async (id: string) => {
-    await supabase.from("ligas").delete().eq("id", id);
+  const iniciarRenombreLiga = (l: { id: string; nombre: string }) => {
+    setRenombrandoLiga(l.id); setRenombreLiga(l.nombre);
+  };
+  const guardarRenombreLiga = async (id: string) => {
+    if (!renombreLiga.trim()) return;
+    await supabase.from("ligas").update({ nombre: renombreLiga.trim() }).eq("id", id);
+    setRenombrandoLiga(null);
+    await cargar(); showToast("Liga renombrada");
+  };
+  const archivarLiga = async (l: { id: string; activo: boolean }) => {
+    await supabase.from("ligas").update({ activo: !l.activo }).eq("id", l.id);
     await cargar();
+  };
+  const intentarDelLiga = async (l: { id: string; nombre: string }) => {
+    const { count } = await supabase.from("partidos").select("*", { count: "exact", head: true }).eq("liga_id", l.id);
+    if (count && count > 0) { setAvisoLiga({ id: l.id, nombre: l.nombre, count }); return; }
+    await supabase.from("ligas").delete().eq("id", l.id);
+    await cargar(); showToast("Liga eliminada");
   };
 
   // ── GALERÍA ──
@@ -357,6 +377,16 @@ export default function AdminCategoriaPage({ params }: { params: { id: string } 
             <div className="card p-4 space-y-3">
               <p className="text-white font-bold text-sm" style={{ fontFamily: "Syne, sans-serif" }}>Agregar liga</p>
               <input value={lNombre} onChange={(e) => setLNombre(e.target.value)} placeholder="Nombre de la liga" className={inputCls} />
+              <div className="grid grid-cols-2 gap-2">
+                {(["liga", "copa"] as const).map((t) => (
+                  <button key={t} onClick={() => setLTipo(t)}
+                    className={`py-2 rounded-lg text-xs font-bold border transition-all ${
+                      lTipo === t ? "bg-pantera-green/20 border-pantera-green/40 text-pantera-green" : "border-white/10 text-gray-500"
+                    }`}>
+                    {t === "liga" ? "Liga" : "🏆 Copa"}
+                  </button>
+                ))}
+              </div>
               <button onClick={addLiga} className="btn-primary w-full text-sm py-3">Agregar</button>
             </div>
             {ligas.length === 0 ? (
@@ -364,17 +394,50 @@ export default function AdminCategoriaPage({ params }: { params: { id: string } 
             ) : (
               <div className="space-y-2">
                 {ligas.map((l) => (
-                  <div key={l.id} className="card p-4 flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <span className="w-2 h-2 rounded-full bg-pantera-green" />
-                      <span className="text-white text-sm">{l.nombre}</span>
-                    </div>
-                    <button onClick={() => delLiga(l.id)} className="text-red-400 hover:text-red-300 text-xs px-2 py-1">Borrar</button>
+                  <div key={l.id} className="card p-4 flex items-center justify-between gap-2" style={{ opacity: l.activo ? 1 : 0.5 }}>
+                    {renombrandoLiga === l.id ? (
+                      <>
+                        <input value={renombreLiga} onChange={(e) => setRenombreLiga(e.target.value)} autoFocus
+                          className={`${inputCls} flex-1`}
+                          onKeyDown={(e) => { if (e.key === "Enter") guardarRenombreLiga(l.id); if (e.key === "Escape") setRenombrandoLiga(null); }} />
+                        <button onClick={() => guardarRenombreLiga(l.id)} className="text-pantera-green text-xs font-bold px-2 py-1 flex-shrink-0">Guardar</button>
+                      </>
+                    ) : (
+                      <>
+                        <div className="flex items-center gap-2 min-w-0">
+                          <span className="w-2 h-2 rounded-full bg-pantera-green flex-shrink-0" />
+                          <span className="text-white text-sm truncate">{l.tipo === "copa" ? "🏆 " : ""}{l.nombre}</span>
+                          {!l.activo && <span className="text-[10px] text-gray-600 flex-shrink-0">(archivada)</span>}
+                        </div>
+                        <div className="flex items-center gap-1 flex-shrink-0">
+                          <button onClick={() => iniciarRenombreLiga(l)} className="text-gray-500 hover:text-gray-300 text-xs px-2 py-1">Renombrar</button>
+                          <button onClick={() => archivarLiga(l)} className="text-gray-500 hover:text-gray-300 text-xs px-2 py-1">{l.activo ? "Archivar" : "Activar"}</button>
+                          <button onClick={() => intentarDelLiga(l)} className="text-red-400 hover:text-red-300 text-xs px-2 py-1">Borrar</button>
+                        </div>
+                      </>
+                    )}
                   </div>
                 ))}
               </div>
             )}
           </>
+        )}
+
+        {/* Aviso: liga con partidos, no se puede eliminar */}
+        {avisoLiga && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4" onClick={() => setAvisoLiga(null)}>
+            <div className="w-full max-w-sm bg-[#141414] border border-white/10 rounded-2xl p-5 space-y-4" onClick={(e) => e.stopPropagation()}>
+              <h2 className="text-white font-bold" style={{ fontFamily: "Syne, sans-serif" }}>No se puede eliminar</h2>
+              <p className="text-gray-400 text-sm">
+                "{avisoLiga.nombre}" tiene {avisoLiga.count} partido{avisoLiga.count !== 1 ? "s" : ""} registrado{avisoLiga.count !== 1 ? "s" : ""}. Archívala en vez de eliminarla — desaparece de los selectores pero conserva el historial.
+              </p>
+              <div className="grid grid-cols-2 gap-3">
+                <button onClick={() => setAvisoLiga(null)} className="py-3 rounded-xl border border-white/10 text-gray-400 text-sm font-bold">Cerrar</button>
+                <button onClick={async () => { await archivarLiga({ id: avisoLiga.id, activo: true }); setAvisoLiga(null); }}
+                  className="btn-primary py-3 text-sm">Archivar</button>
+              </div>
+            </div>
+          </div>
         )}
 
         {/* ── GALERÍA ── */}
