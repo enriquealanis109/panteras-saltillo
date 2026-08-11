@@ -1,10 +1,12 @@
 "use client";
 import { useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
 import Image from "next/image";
 
 const LETTERS = ["P","A","N","T","E","R","A","S"];
 
 export default function PageLoader() {
+  const pathname = usePathname();
   const [visible,  setVisible]  = useState(true);
   const [fadeOut,  setFadeOut]  = useState(false);
 
@@ -13,6 +15,11 @@ export default function PageLoader() {
     const t2 = setTimeout(() => setVisible(false), 2500);
     return () => { clearTimeout(t1); clearTimeout(t2); };
   }, []);
+
+  // Splash de bienvenida solo para el sitio público — un coordinador/coach
+  // no necesita verlo cada vez que entra a trabajar, y está hecho a la
+  // medida del nombre "Panteras" (no sirve tal cual para otro club).
+  if (pathname?.startsWith("/admin") || pathname?.startsWith("/coach")) return null;
 
   if (!visible) return null;
 
