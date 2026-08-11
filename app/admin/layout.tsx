@@ -131,6 +131,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const [nombre, setNombre]     = useState("");
   const [branding, setBranding] = useState<ClubBranding>(DEFAULT_BRANDING);
   const [masOpen, setMasOpen]   = useState(false);
+  const [aviso, setAviso]       = useState("");
+
+  const avisarBloqueado = (label: string) => {
+    setAviso(`${label} no está incluido en tu plan. Contacta al administrador del sistema para activarlo.`);
+    setTimeout(() => setAviso(""), 3500);
+  };
 
   useEffect(() => {
     const check = async () => {
@@ -199,6 +205,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     <div className="min-h-screen bg-[#0a0a0a] flex overflow-x-hidden"
       style={{ "--club-accent": hexToRgbTriplet(branding.colorAcento) } as React.CSSProperties}>
 
+      {aviso && (
+        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[60] px-5 py-3 rounded-xl text-sm font-semibold shadow-xl max-w-[90vw] text-center bg-[#111] border border-white/10 text-white">
+          {aviso}
+        </div>
+      )}
+
       {/* ── DESKTOP SIDEBAR ─────────────────────── */}
       <aside className="hidden lg:flex flex-col w-56 bg-[#0d0d0d] border-r border-white/[0.06] fixed h-full z-20">
         <div className="px-5 py-5 border-b border-white/[0.06]">
@@ -241,13 +253,24 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               <p className="text-gray-600 text-[10px]">Administrador</p>
             </div>
           </div>
-          <a href="/" target="_blank"
-            className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-gray-500 hover:text-white hover:bg-white/[0.04] transition-all">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>
-            </svg>
-            Ver sitio
-          </a>
+          {branding.modulosActivos.includes("sitio_publico") ? (
+            <a href="/" target="_blank"
+              className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-gray-500 hover:text-white hover:bg-white/[0.04] transition-all">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>
+              </svg>
+              Ver sitio
+            </a>
+          ) : (
+            <button onClick={() => avisarBloqueado("Ver sitio")}
+              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-gray-700 hover:text-gray-500 hover:bg-white/[0.02] transition-all">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>
+              </svg>
+              <span className="flex-1 text-left">Ver sitio</span>
+              <IconLock />
+            </button>
+          )}
           <button onClick={handleLogout}
             className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-gray-500 hover:text-red-400 hover:bg-red-500/5 transition-all">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -367,13 +390,24 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             })}
 
             <div className="border-t border-white/[0.06] pt-2 mt-2 space-y-0.5">
-              <a href="/" target="_blank"
-                className="flex items-center gap-3 px-3 py-3 rounded-xl text-sm text-gray-500 hover:text-white hover:bg-white/[0.04] transition-all">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>
-                </svg>
-                Ver sitio
-              </a>
+              {branding.modulosActivos.includes("sitio_publico") ? (
+                <a href="/" target="_blank"
+                  className="flex items-center gap-3 px-3 py-3 rounded-xl text-sm text-gray-500 hover:text-white hover:bg-white/[0.04] transition-all">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>
+                  </svg>
+                  Ver sitio
+                </a>
+              ) : (
+                <button onClick={() => { avisarBloqueado("Ver sitio"); setMasOpen(false); }}
+                  className="w-full flex items-center gap-3 px-3 py-3 rounded-xl text-sm text-gray-700 hover:text-gray-500 hover:bg-white/[0.02] transition-all">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>
+                  </svg>
+                  <span className="flex-1 text-left">Ver sitio</span>
+                  <IconLock />
+                </button>
+              )}
               <button onClick={handleLogout}
                 className="w-full flex items-center gap-3 px-3 py-3 rounded-xl text-sm text-red-400 hover:bg-red-500/5 transition-all">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

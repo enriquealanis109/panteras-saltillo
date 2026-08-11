@@ -186,14 +186,29 @@ export default function CoachDashboard() {
             <div className="absolute right-0 top-11 border rounded-xl shadow-2xl w-48 py-1 z-50"
               style={{ background: "var(--bg-alt)", borderColor: "var(--border-strong)" }}
               onClick={() => setMenuOpen(false)}>
-              {tiene("sitio_publico") && (
+              {tiene("sitio_publico") ? (
                 <a href="/" className="link-muted-theme block px-4 py-3 text-sm transition-colors">Ver sitio</a>
+              ) : (
+                <button onClick={() => { irOModulo("", "sitio_publico", "Ver sitio"); setMenuOpen(false); }}
+                  className="w-full flex items-center gap-2 px-4 py-3 text-sm transition-colors" style={{ color: "var(--text-muted)" }}>
+                  <span className="flex-1 text-left">Ver sitio</span>
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/>
+                  </svg>
+                </button>
               )}
               {esAdmin && <>
                 <button onClick={() => router.push("/admin")} className="link-muted-theme w-full text-left px-4 py-3 text-sm transition-colors">Panel admin</button>
-                {tiene("metricas") && (
-                  <button onClick={() => router.push("/coach/stats")} className="link-muted-theme w-full text-left px-4 py-3 text-sm transition-colors">Métricas</button>
-                )}
+                <button onClick={() => { irOModulo("/coach/stats", "metricas", "Métricas"); setMenuOpen(false); }}
+                  className={`w-full flex items-center gap-2 px-4 py-3 text-sm transition-colors ${tiene("metricas") ? "link-muted-theme" : ""}`}
+                  style={!tiene("metricas") ? { color: "var(--text-muted)" } : undefined}>
+                  <span className="flex-1 text-left">Métricas</span>
+                  {!tiene("metricas") && (
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/>
+                    </svg>
+                  )}
+                </button>
               </>}
               {esCoordinador && (
                 <button onClick={() => window.open("/manual-coordinador.pdf", "_blank")} className="w-full text-left px-4 py-3 text-blue-400 hover:text-blue-300 text-sm transition-colors flex items-center gap-2">
@@ -322,9 +337,10 @@ export default function CoachDashboard() {
                   <span className="text-[11px] font-semibold" style={{ color: "var(--text-secondary)" }}>Métricas</span>
                 </button>
               </>}
-              {!esAdmin && tiene("sitio_publico") && (
-                <button onClick={() => window.open("/", "_blank")}
-                  className="flex flex-col items-center gap-2 py-4 rounded-xl border hover:border-white/15 active:scale-95 transition-all" style={{ background: "var(--bg-surface-1)", borderColor: "var(--border-subtle)" }}>
+              {!esAdmin && (
+                <button onClick={() => tiene("sitio_publico") ? window.open("/", "_blank") : irOModulo("", "sitio_publico", "Sitio web")}
+                  className={`flex flex-col items-center gap-2 py-4 rounded-xl border hover:border-white/15 active:scale-95 transition-all ${!tiene("sitio_publico") ? "opacity-40" : ""}`}
+                  style={{ background: "var(--bg-surface-1)", borderColor: "var(--border-subtle)" }}>
                   <svg width="22" height="22" viewBox="0 0 24 24" fill="none" style={{ stroke: "var(--text-secondary)" }} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg>
                   <span className="text-[11px] font-semibold" style={{ color: "var(--text-secondary)" }}>Sitio web</span>
                 </button>
