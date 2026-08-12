@@ -6,7 +6,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { PanelTour } from "@/components/admin/PanelTour";
 import { ADMIN_TOURS } from "@/lib/admin-tours";
-import { DEFAULT_BRANDING, hexToRgbTriplet, type ClubBranding, type ModuloOpcional } from "@/lib/club-context";
+import { ClubContext, DEFAULT_BRANDING, hexToRgbTriplet, type ClubBranding, type ModuloOpcional } from "@/lib/club-context";
 
 const NAV: { href: string; label: string; icon: React.ReactNode; modulo?: ModuloOpcional }[] = [
   {
@@ -202,6 +202,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   );
 
   return (
+    <ClubContext.Provider value={branding}>
     <div className="min-h-screen bg-[#0a0a0a] flex overflow-x-hidden"
       style={{ "--club-accent": hexToRgbTriplet(branding.colorAcento) } as React.CSSProperties}>
 
@@ -431,5 +432,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         </div>
       )}
     </div>
+    </ClubContext.Provider>
   );
 }

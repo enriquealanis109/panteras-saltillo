@@ -18,8 +18,9 @@ export default function PageLoader() {
 
   // Splash de bienvenida solo para el sitio público — un coordinador/coach
   // no necesita verlo cada vez que entra a trabajar, y está hecho a la
-  // medida del nombre "Panteras" (no sirve tal cual para otro club).
-  if (pathname?.startsWith("/admin") || pathname?.startsWith("/coach")) return null;
+  // medida del nombre "Panteras" (no sirve tal cual para otro club), así
+  // que en deploys de otros clubes (NEXT_PUBLIC_CLUB_NOMBRE seteado) no sale.
+  if (pathname?.startsWith("/admin") || pathname?.startsWith("/coach") || process.env.NEXT_PUBLIC_CLUB_NOMBRE) return null;
 
   if (!visible) return null;
 

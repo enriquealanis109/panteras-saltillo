@@ -10,6 +10,7 @@ import {
 } from "@/lib/supabase";
 import { PanelTour } from "@/components/admin/PanelTour";
 import { COBROS_STEPS } from "@/lib/coach-tours";
+import { useClub } from "@/lib/club-context";
 
 interface PagoDato { estatus: EstatusPago; monto_pagado: number }
 type PagoMap = Record<string, Record<string, PagoDato>>;
@@ -110,6 +111,7 @@ function CeldaEstatus({ estatus, onClick, saving }: {
 export default function CobrosPage({ params }: { params: { id: string } }) {
   const categoriaId = params.id;
   const router      = useRouter();
+  const { nombre: clubNombre } = useClub();
 
   const [categoria,     setCategoria]     = useState("");
   const [jugadores,     setJugadores]     = useState<Jugador[]>([]);
@@ -369,10 +371,10 @@ export default function CobrosPage({ params }: { params: { id: string } }) {
     ctx.fillStyle = "#0d0d0d";
     ctx.fillRect(0, 0, W, HEAD);
 
-    // Título "Panteras Saltillo"
+    // Título con el nombre del club
     ctx.font = `500 10px ${FONT}`;
     ctx.fillStyle = "#4b5563";
-    ctx.fillText("PANTERAS SALTILLO", PAD, 22);
+    ctx.fillText(clubNombre.toUpperCase(), PAD, 22);
 
     // Fecha (derecha)
     const fecha = new Date().toLocaleDateString("es-MX", { day: "numeric", month: "long", year: "numeric" });

@@ -2,16 +2,23 @@
 import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
+import { useClub, type ModuloOpcional } from "@/lib/club-context";
 
 type Tab = "palmares" | "ligas" | "galeria" | "staff" | "portada";
 
-const TABS: { id: Tab; label: string }[] = [
-  { id: "portada",  label: "Foto equipo" },
-  { id: "palmares", label: "Palmarés" },
-  { id: "ligas",    label: "Ligas" },
-  { id: "galeria",  label: "Galería" },
-  { id: "staff",    label: "Staff" },
+const TABS: { id: Tab; label: string; modulo?: ModuloOpcional }[] = [
+  { id: "portada",  label: "Foto equipo", modulo: "sitio_publico" },
+  { id: "palmares", label: "Palmarés",    modulo: "sitio_publico" },
+  { id: "ligas",    label: "Ligas",       modulo: "partidos" },
+  { id: "galeria",  label: "Galería",     modulo: "sitio_publico" },
+  { id: "staff",    label: "Staff",       modulo: "sitio_publico" },
 ];
+
+const IconLock = () => (
+  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/>
+  </svg>
+);
 
 const TIPOS_PALMARES = ["campeonato", "subcampeonato", "torneo"];
 
@@ -38,7 +45,10 @@ async function borrarArchivo(bucket: string, url: string) {
 export default function AdminCategoriaPage({ params }: { params: { id: string } }) {
   const categoriaId = params.id;
   const router = useRouter();
-  const [tab, setTab]             = useState<Tab>("palmares");
+  const { modulosActivos } = useClub();
+  const tieneModulo = (m?: ModuloOpcional) => !m || modulosActivos.includes(m);
+  const tabsDisponibles = TABS.filter((t) => tieneModulo(t.modulo));
+  const [tab, setTab]             = useState<Tab>(() => tabsDisponibles[0]?.id ?? "palmares");
   const [categoria, setCategoria] = useState("");
   const [toast, setToast]         = useState<{ msg: string; ok: boolean } | null>(null);
 
@@ -242,16 +252,36 @@ export default function AdminCategoriaPage({ params }: { params: { id: string } 
 
       {/* Tabs */}
       <div className="flex border-b border-white/[0.06] overflow-x-auto sticky top-[57px] bg-[#0a0a0a] z-10">
-        {TABS.map((t) => (
-          <button key={t.id} onClick={() => setTab(t.id)}
-            className={`flex-shrink-0 px-5 py-3 text-sm font-semibold transition-all border-b-2 ${
-              tab === t.id ? "border-pantera-green text-white" : "border-transparent text-gray-500 hover:text-gray-300"
-            }`}>
-            {t.label}
-          </button>
-        ))}
+        {TABS.map((t) => {
+          const disponible = tieneModulo(t.modulo);
+          return (
+            <button key={t.id}
+              onClick={() => disponible ? setTab(t.id) : showToast(`${t.label} no está incluido en tu plan.`, false)}
+              className={`flex-shrink-0 flex items-center gap-1.5 px-5 py-3 text-sm font-semibold transition-all border-b-2 ${
+                !disponible
+                  ? "border-transparent text-gray-700 hover:text-gray-500"
+                  : tab === t.id ? "border-pantera-green text-white" : "border-transparent text-gray-500 hover:text-gray-300"
+              }`}>
+              {t.label}
+              {!disponible && <IconLock />}
+            </button>
+          );
+        })}
       </div>
 
+      {tabsDisponibles.length === 0 ? (
+        <div className="flex flex-col items-center justify-center text-center px-6 py-24">
+          <div className="w-14 h-14 rounded-2xl bg-white/[0.04] border border-white/[0.08] flex items-center justify-center mb-5 text-gray-500">
+            <IconLock />
+          </div>
+          <h2 className="text-white font-bold text-lg mb-2" style={{ fontFamily: "Syne, sans-serif" }}>
+            Esta sección no está incluida en tu plan
+          </h2>
+          <p className="text-gray-500 text-sm max-w-sm">
+            Contacta al administrador del sistema si quieres agregar contenido de categorías a tu club.
+          </p>
+        </div>
+      ) : (
       <div className="max-w-lg mx-auto px-4 py-5 space-y-4">
 
         {/* ── FOTO PORTADA ── */}
@@ -517,6 +547,7 @@ export default function AdminCategoriaPage({ params }: { params: { id: string } 
           </>
         )}
       </div>
+      )}
     </div>
   );
 }

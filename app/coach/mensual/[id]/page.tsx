@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { supabase, type Jugador, type Asistencia } from "@/lib/supabase";
 import { PanelTour } from "@/components/admin/PanelTour";
 import { MENSUAL_STEPS } from "@/lib/coach-tours";
-import { useClub } from "@/lib/club-context";
+import { useClub, hexToRgbArray } from "@/lib/club-context";
 
 const MESES = ["Enero","Febrero","Marzo","Abril","Mayo","Junio",
                "Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
@@ -34,7 +34,8 @@ interface Resumen {
 }
 
 export default function MensualPage({ params }: { params: { id: string } }) {
-  const { logoUrl } = useClub();
+  const { logoUrl, colorAcento, nombre: clubNombre } = useClub();
+  const [accentR, accentG, accentB] = hexToRgbArray(colorAcento);
   const categoriaId = params.id;
   const router = useRouter();
 
@@ -119,17 +120,22 @@ export default function MensualPage({ params }: { params: { id: string } }) {
           r.onloadend = () => res(r.result as string);
           r.readAsDataURL(blob);
         });
+        doc.saveGraphicsState();
+        doc.circle(logoX + logoSize / 2, 8 + logoSize / 2, logoSize / 2 * 0.96, null);
+        doc.clip();
+        doc.discardPath();
         doc.addImage(logoBase64, "PNG", logoX, 8, logoSize, logoSize);
+        doc.restoreGraphicsState();
       } catch {}
-      let y = logoBase64 ? 8 + logoSize + 6 : 14;
+      let y = logoBase64 ? 8 + logoSize + 11 : 14;
 
       doc.setFontSize(22);
       doc.setFont("helvetica", "bold");
-      doc.setTextColor(34, 197, 94);
-      doc.text("Panteras Saltillo", W / 2, y, { align: "center" });
+      doc.setTextColor(accentR, accentG, accentB);
+      doc.text(clubNombre, W / 2, y, { align: "center" });
       y += 6;
 
-      doc.setDrawColor(34, 197, 94);
+      doc.setDrawColor(accentR, accentG, accentB);
       doc.setLineWidth(0.5);
       doc.line(margin + 20, y, W - margin - 20, y);
       y += 7;
@@ -163,11 +169,11 @@ export default function MensualPage({ params }: { params: { id: string } }) {
           r.ausente,
           r.pct !== null ? `${r.pct}%` : "—",
         ]),
-        headStyles: { fillColor: [22, 163, 74], textColor: 255, fontStyle: "bold", fontSize: 12 },
+        headStyles: { fillColor: [accentR, accentG, accentB], textColor: 0, fontStyle: "bold", fontSize: 12, valign: "middle" },
         alternateRowStyles: { fillColor: [245, 245, 245] },
-        styles: { fontSize: 13, cellPadding: 5 },
+        styles: { fontSize: 13, cellPadding: 5, valign: "middle" },
         columnStyles: {
-          0: { halign: "center", cellWidth: 8 },
+          0: { halign: "center", cellWidth: 12, cellPadding: { top: 5, bottom: 5, left: 1, right: 1 } },
           2: { halign: "center" }, 3: { halign: "center" },
           4: { halign: "center" }, 5: { halign: "center" },
           6: { halign: "center" }, 7: { halign: "center", fontStyle: "bold" },

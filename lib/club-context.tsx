@@ -17,7 +17,7 @@ export const DEFAULT_BRANDING: ClubBranding = {
   modulosActivos: [...MODULOS_OPCIONALES],
 };
 
-const ClubContext = createContext<ClubBranding>(DEFAULT_BRANDING);
+export const ClubContext = createContext<ClubBranding>(DEFAULT_BRANDING);
 export const useClub = () => useContext(ClubContext);
 
 /** "#16a34a" -> "22 163 74" (formato que espera la variable --club-accent). */
@@ -28,6 +28,17 @@ export function hexToRgbTriplet(hex: string): string {
   const b = parseInt(clean.substring(4, 6), 16);
   if ([r, g, b].some(Number.isNaN)) return hexToRgbTriplet(DEFAULT_BRANDING.colorAcento);
   return `${r} ${g} ${b}`;
+}
+
+/** "#16a34a" -> [22, 163, 74] — para librerías de PDF (jsPDF setTextColor/setDrawColor/etc),
+ *  que reciben números sueltos y no leen variables CSS. */
+export function hexToRgbArray(hex: string): [number, number, number] {
+  const clean = hex.replace("#", "");
+  const r = parseInt(clean.substring(0, 2), 16);
+  const g = parseInt(clean.substring(2, 4), 16);
+  const b = parseInt(clean.substring(4, 6), 16);
+  if ([r, g, b].some(Number.isNaN)) return hexToRgbArray(DEFAULT_BRANDING.colorAcento);
+  return [r, g, b];
 }
 
 /**

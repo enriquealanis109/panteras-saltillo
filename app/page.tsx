@@ -1,3 +1,4 @@
+import { redirect } from "next/navigation";
 import Navbar from "@/components/Navbar";
 import ChatWidget from "@/components/ChatWidget";
 import Hero from "@/components/Hero";
@@ -10,6 +11,11 @@ import Footer from "@/components/Footer";
 import AnimatedSection from "@/components/AnimatedSection";
 
 export default function Home() {
+  // Este landing está hecho a la medida de Panteras. Los demás clubes
+  // (NEXT_PUBLIC_CLUB_NOMBRE seteado) todavía no tienen sitio público propio,
+  // así que la raíz manda directo al login del panel en vez de mostrarlo.
+  if (process.env.NEXT_PUBLIC_CLUB_NOMBRE) redirect("/coach/login");
+
   return (
     <main>
       <Navbar />

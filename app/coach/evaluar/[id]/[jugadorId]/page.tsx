@@ -39,7 +39,7 @@ function ScoreSelect({ label, value, onChange }: { label: string; value: number;
 }
 
 export default function EvaluarJugadorPage({ params }: { params: { id: string; jugadorId: string } }) {
-  const { logoUrl } = useClub();
+  const { logoUrl, nombre: clubNombre } = useClub();
   const { id: categoriaId, jugadorId } = params;
   const router = useRouter();
 
@@ -166,12 +166,17 @@ export default function EvaluarJugadorPage({ params }: { params: { id: string; j
         logoBase64 = await new Promise<string>((res) => {
           const r = new FileReader(); r.onloadend = () => res(r.result as string); r.readAsDataURL(blob);
         });
+        doc.saveGraphicsState();
+        doc.circle(logoX + logoSize / 2, 6 + logoSize / 2, logoSize / 2 * 0.96, null);
+        doc.clip();
+        doc.discardPath();
         doc.addImage(logoBase64, "PNG", logoX, 6, logoSize, logoSize);
+        doc.restoreGraphicsState();
       } catch {}
-      let headerY = logoBase64 ? 6 + logoSize + 5 : 14;
+      let headerY = logoBase64 ? 6 + logoSize + 8 : 14;
 
       doc.setFontSize(16); doc.setFont("helvetica", "bold"); doc.setTextColor(0,0,0);
-      doc.text("PANTERAS SALTILLO", W/2, headerY, { align: "center" });
+      doc.text(clubNombre.toUpperCase(), W/2, headerY, { align: "center" });
       headerY += 8;
       doc.setFontSize(12);
       doc.text("FICHA DE EVALUACIÓN DEL JUGADOR", W/2, headerY, { align: "center" });
@@ -239,23 +244,33 @@ export default function EvaluarJugadorPage({ params }: { params: { id: string; j
 
       const y5 = Math.min(y4 + 5 + lines.length * 4 + 15, 250);
       const firmaW = 55;
-      const x1f = margin, x2f = W/2 - firmaW/2, x3f = W - margin - firmaW;
-
-      try {
-        const resp = await fetch("/firma-director.png");
-        const blob = await resp.blob();
-        const b64 = await new Promise<string>((res) => {
-          const r = new FileReader(); r.onloadend = () => res(r.result as string); r.readAsDataURL(blob);
-        });
-        doc.addImage(b64, "PNG", x3f, y5 - 10, firmaW, 12);
-      } catch {}
+      // La firma del director deportivo es específica de Panteras — otros
+      // clubes (NEXT_PUBLIC_CLUB_NOMBRE seteado) solo llevan padre/entrenador.
+      const esPanteras = !process.env.NEXT_PUBLIC_CLUB_NOMBRE;
 
       doc.setDrawColor(0); doc.setLineWidth(0.3);
-      [x1f, x2f, x3f].forEach((x) => doc.line(x, y5 + 2, x + firmaW, y5 + 2));
       doc.setFontSize(7.5);
-      doc.text("FIRMA PADRE O TUTOR", x1f + firmaW/2, y5 + 6, { align: "center" });
-      doc.text(`FIRMA ENTRENADOR\n${entrenadorNombre.toUpperCase()}`, x2f + firmaW/2, y5 + 6, { align: "center" });
-      doc.text("FIRMA DIRECTOR DEPORTIVO\nJOSUE ARRIAGA MATA", x3f + firmaW/2, y5 + 6, { align: "center" });
+
+      if (esPanteras) {
+        const x1f = margin, x2f = W/2 - firmaW/2, x3f = W - margin - firmaW;
+        try {
+          const resp = await fetch("/firma-director.png");
+          const blob = await resp.blob();
+          const b64 = await new Promise<string>((res) => {
+            const r = new FileReader(); r.onloadend = () => res(r.result as string); r.readAsDataURL(blob);
+          });
+          doc.addImage(b64, "PNG", x3f, y5 - 10, firmaW, 12);
+        } catch {}
+        [x1f, x2f, x3f].forEach((x) => doc.line(x, y5 + 2, x + firmaW, y5 + 2));
+        doc.text("FIRMA PADRE O TUTOR", x1f + firmaW/2, y5 + 6, { align: "center" });
+        doc.text(`FIRMA ENTRENADOR\n${entrenadorNombre.toUpperCase()}`, x2f + firmaW/2, y5 + 6, { align: "center" });
+        doc.text("FIRMA DIRECTOR DEPORTIVO\nJOSUE ARRIAGA MATA", x3f + firmaW/2, y5 + 6, { align: "center" });
+      } else {
+        const x1f = margin, x2f = W - margin - firmaW;
+        [x1f, x2f].forEach((x) => doc.line(x, y5 + 2, x + firmaW, y5 + 2));
+        doc.text("FIRMA PADRE O TUTOR", x1f + firmaW/2, y5 + 6, { align: "center" });
+        doc.text(`FIRMA ENTRENADOR\n${entrenadorNombre.toUpperCase()}`, x2f + firmaW/2, y5 + 6, { align: "center" });
+      }
 
       const blob = doc.output("blob");
       const fileName = `Evaluacion_${jugador.nombre}_${ev.bimestre}.pdf`;

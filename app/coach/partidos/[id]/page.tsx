@@ -4,7 +4,7 @@ import { useRouter, useParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { Toaster, toast } from "react-hot-toast";
 import { computeLigaStats } from "@/lib/liga-stats";
-import { useClub } from "@/lib/club-context";
+import { useClub, hexToRgbArray } from "@/lib/club-context";
 
 interface Jugador {
   id: string;
@@ -55,7 +55,8 @@ const fmtFechaLargo = (f: string | null) => {
 export default function PartidoDetallePage() {
   const router = useRouter();
   const { id } = useParams<{ id: string }>();
-  const { logoUrl } = useClub();
+  const { logoUrl, colorAcento, nombre: clubNombre } = useClub();
+  const [accentR, accentG, accentB] = hexToRgbArray(colorAcento);
 
   const [partido, setPartido]         = useState<Partido | null>(null);
   const [jugadores, setJugadores]     = useState<Jugador[]>([]);
@@ -247,19 +248,26 @@ export default function PartidoDetallePage() {
 
       const logoSize = 30;
       const logoX    = (W - logoSize) / 2;
-      if (logoBase64) doc.addImage(logoBase64, "PNG", logoX, 8, logoSize, logoSize);
+      if (logoBase64) {
+        doc.saveGraphicsState();
+        doc.circle(logoX + logoSize / 2, 8 + logoSize / 2, logoSize / 2 * 0.96, null);
+        doc.clip();
+        doc.discardPath();
+        doc.addImage(logoBase64, "PNG", logoX, 8, logoSize, logoSize);
+        doc.restoreGraphicsState();
+      }
 
-      let y = logoBase64 ? 8 + logoSize + 5 : 14;
+      let y = logoBase64 ? 8 + logoSize + 10 : 14;
 
-      // "Panteras Saltillo" — centrado, verde, grande
+      // Nombre del club — centrado, color de acento, grande
       doc.setFont("helvetica", "bold");
       doc.setFontSize(22);
-      doc.setTextColor(22, 163, 74);
-      doc.text("Panteras Saltillo", W / 2, y, { align: "center" });
+      doc.setTextColor(accentR, accentG, accentB);
+      doc.text(clubNombre, W / 2, y, { align: "center" });
       y += 6;
 
-      // Línea decorativa verde
-      doc.setDrawColor(22, 163, 74);
+      // Línea decorativa
+      doc.setDrawColor(accentR, accentG, accentB);
       doc.setLineWidth(0.7);
       doc.line(margin + 20, y, W - margin - 20, y);
       y += 9;
@@ -329,7 +337,7 @@ export default function PartidoDetallePage() {
 
         doc.setFontSize(19);
         doc.setTextColor(10, 10, 10);
-        doc.text(`Panteras  ${gp}  —  ${gr}  ${rivalNombre}`, W / 2, y + 27, { align: "center" });
+        doc.text(`${clubNombre}  ${gp}  —  ${gr}  ${rivalNombre}`, W / 2, y + 27, { align: "center" });
 
         y += 46;
       }
@@ -348,11 +356,11 @@ export default function PartidoDetallePage() {
         startY: y,
         head: [["#", "Jugador"]],
         body: presentes.map((j, i) => [String(i + 1), j.nombre]),
-        headStyles: { fillColor: [22, 163, 74], textColor: 255, fontStyle: "bold", fontSize: 12 },
+        headStyles: { fillColor: [accentR, accentG, accentB], textColor: 0, fontStyle: "bold", fontSize: 12, valign: "middle" },
         alternateRowStyles: { fillColor: [245, 245, 245] },
-        styles: { fontSize: 13, cellPadding: 5 },
+        styles: { fontSize: 13, cellPadding: 5, valign: "middle" },
         columnStyles: {
-          0: { halign: "center", cellWidth: 15 },
+          0: { halign: "center", cellWidth: 15, cellPadding: { top: 5, bottom: 5, left: 1, right: 1 } },
           1: { textColor: [0, 0, 0] },
         },
         margin: { left: margin, right: margin },
@@ -374,7 +382,7 @@ export default function PartidoDetallePage() {
         doc.setFont("helvetica", "normal");
         doc.setFontSize(9);
         doc.setTextColor(100, 100, 100);
-        doc.text(`Generado el ${hoy} · Panteras Saltillo`, margin, 290);
+        doc.text(`Generado el ${hoy} · ${clubNombre}`, margin, 290);
         doc.text(`${i} / ${pages}`, W - margin, 290, { align: "right" });
       }
 
@@ -685,7 +693,7 @@ export default function PartidoDetallePage() {
           <div className="rounded-2xl p-4 border" style={{ background: "var(--bg-surface-1)", borderColor: "var(--border-subtle)" }}>
             <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3">
               <div className="text-center">
-                <p className={`text-[10px] uppercase tracking-widest font-bold mb-2 ${ganamos ? "text-pantera-green" : ""}`} style={!ganamos ? { color: "var(--text-secondary)" } : undefined}>Panteras</p>
+                <p className={`text-[10px] uppercase tracking-widest font-bold mb-2 truncate ${ganamos ? "text-pantera-green" : ""}`} style={!ganamos ? { color: "var(--text-secondary)" } : undefined}>{clubNombre}</p>
                 <input type="number" min={0} inputMode="numeric"
                   value={golesP} onChange={(e) => setGolesP(e.target.value)} placeholder="0"
                   className={`w-full border rounded-xl px-2 py-3 text-center text-2xl font-black focus:outline-none transition-all ${
