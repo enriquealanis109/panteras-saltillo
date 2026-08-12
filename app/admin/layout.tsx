@@ -285,7 +285,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       {/* ── MOBILE TOP HEADER ───────────────────── */}
       <div className="lg:hidden fixed top-0 left-0 right-0 z-30 bg-[#0d0d0d] border-b border-white/[0.06] px-4 py-3 flex items-center justify-between">
         <div className="flex items-center gap-2.5">
-          <Image src="/icon-192.png" alt="Panteras" width={26} height={26} className="rounded-full" />
+          <Image src={branding.logoUrl} alt={branding.nombre} width={26} height={26} className="rounded-full" />
           <div>
             <p className="text-white font-bold text-sm leading-tight" style={{ fontFamily: "Syne, sans-serif" }}>
               {currentTour ? currentTour.label : "Panel Admin"}

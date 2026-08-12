@@ -5,6 +5,9 @@ import { supabase } from "@/lib/supabase";
 import Image from "next/image";
 import toast from "react-hot-toast";
 
+const CLUB_LOGO = process.env.NEXT_PUBLIC_CLUB_LOGO_URL || "/icon-192.png";
+const CLUB_NOMBRE = process.env.NEXT_PUBLIC_CLUB_NOMBRE || "Panteras Saltillo";
+
 interface Partido {
   id: string;
   fecha: string | null;
@@ -222,7 +225,7 @@ export default function PapaPage() {
       {/* Header */}
       <header className="bg-[#0d0d0d] border-b border-white/[0.06] px-5 py-4 flex items-center justify-between sticky top-0 z-20">
         <div className="flex items-center gap-3">
-          <Image src="/icon-192.png" alt="Panteras" width={32} height={32} className="rounded-full" />
+          <Image src={CLUB_LOGO} alt={CLUB_NOMBRE} width={32} height={32} className="rounded-full" />
           <div>
             <p className="text-white font-bold text-sm" style={{ fontFamily: "Syne, sans-serif" }}>
               Hola, {padre?.nombre.split(" ")[0]}

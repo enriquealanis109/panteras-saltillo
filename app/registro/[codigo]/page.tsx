@@ -5,6 +5,9 @@ import { supabase } from "@/lib/supabase";
 import Image from "next/image";
 import toast from "react-hot-toast";
 
+const CLUB_LOGO = process.env.NEXT_PUBLIC_CLUB_LOGO_URL || "/icon-192.png";
+const CLUB_NOMBRE = process.env.NEXT_PUBLIC_CLUB_NOMBRE || "Panteras Saltillo";
+
 type Step = "validando" | "form" | "hijos" | "notif" | "ios-guia" | "listo" | "error";
 
 interface JugadorCat { id: string; nombre: string; }
@@ -251,7 +254,7 @@ export default function RegistroPage() {
     <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center px-5">
       <div className="max-w-sm w-full">
         <div className="text-center mb-8">
-          <Image src="/icon-192.png" alt="Panteras" width={56} height={56} className="rounded-full mx-auto mb-4 border border-pantera-green/20" />
+          <Image src={CLUB_LOGO} alt={CLUB_NOMBRE} width={56} height={56} className="rounded-full mx-auto mb-4 border border-pantera-green/20" />
           <h2 className="text-white font-bold text-xl mb-2" style={{ fontFamily: "Syne, sans-serif" }}>
             Agrega la app a tu iPhone
           </h2>
@@ -327,7 +330,7 @@ export default function RegistroPage() {
     <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center px-5 py-10">
       <div className="w-full max-w-sm">
         <div className="text-center mb-8">
-          <Image src="/icon-192.png" alt="Panteras" width={56} height={56} className="rounded-full mx-auto mb-4 border border-pantera-green/20" />
+          <Image src={CLUB_LOGO} alt={CLUB_NOMBRE} width={56} height={56} className="rounded-full mx-auto mb-4 border border-pantera-green/20" />
           <div className="inline-flex items-center gap-2 bg-pantera-green/10 border border-pantera-green/20 rounded-full px-3 py-1 mb-3">
             <div className="w-1.5 h-1.5 rounded-full bg-pantera-green" />
             <span className="text-pantera-green text-xs font-semibold">Categoria {codigoData?.categorias?.nombre}</span>

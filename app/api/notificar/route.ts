@@ -77,8 +77,8 @@ export async function POST(req: NextRequest) {
     const payload = JSON.stringify({
       title: titulo,
       body:  cuerpo,
-      icon:  "/icon-192.png",
-      badge: "/icon-192.png",
+      icon:  process.env.NEXT_PUBLIC_CLUB_LOGO_URL || "/icon-192.png",
+      badge: process.env.NEXT_PUBLIC_CLUB_LOGO_URL || "/icon-192.png",
       data:  { partido_id, url: "/papa" },
     });
 
