@@ -16,10 +16,18 @@ const CLUB_DESCRIPCION = process.env.NEXT_PUBLIC_CLUB_DESCRIPCION
 const CLUB_COLOR = process.env.NEXT_PUBLIC_CLUB_COLOR || "#16a34a";
 const CLUB_LOGO = process.env.NEXT_PUBLIC_CLUB_LOGO_URL || "/icon-192.png";
 
+// Vercel inyecta esto solo en cada deploy (sin configurar nada) — así la
+// imagen de vista previa (WhatsApp, etc.) sale con URL absoluta y apunta
+// al dominio real de cada club en vez de quedar pegada a uno solo.
+const SITE_URL = process.env.VERCEL_PROJECT_PRODUCTION_URL
+  ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
+  : "https://panteras-saltillo.vercel.app";
+
 export const metadata: Metadata = {
+  metadataBase: new URL(SITE_URL),
   title: `${CLUB_NOMBRE} | Academia de Fútbol en Saltillo`,
   description: CLUB_DESCRIPCION,
-  keywords: "academia de futbol saltillo, futbol infantil coahuila, panteras fc, futbol juvenil saltillo",
+  keywords: `academia de futbol saltillo, futbol infantil coahuila, ${CLUB_NOMBRE.toLowerCase()}, futbol juvenil saltillo`,
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
@@ -30,6 +38,13 @@ export const metadata: Metadata = {
     title: `${CLUB_NOMBRE} | Academia de Fútbol en Saltillo`,
     description: CLUB_DESCRIPCION,
     type: "website",
+    images: [{ url: CLUB_LOGO, width: 512, height: 512, alt: CLUB_NOMBRE }],
+  },
+  twitter: {
+    card: "summary",
+    title: `${CLUB_NOMBRE} | Academia de Fútbol en Saltillo`,
+    description: CLUB_DESCRIPCION,
+    images: [CLUB_LOGO],
   },
 };
 
