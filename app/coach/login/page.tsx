@@ -79,16 +79,19 @@ export default function LoginPage() {
 
         {/* Logo */}
         <div className="flex flex-col items-center mb-10">
-          <Image src={CLUB_LOGO} alt="" width={72} height={72}
-            className="rounded-full mb-4" />
-          <h1 className="font-bold text-xl" style={{ fontFamily: "Syne, sans-serif", color: "var(--text-primary)" }}>
+          <div style={{ animation: "loginLogoIn 0.5s cubic-bezier(0.34,1.56,0.64,1) both" }}>
+            <Image src={CLUB_LOGO} alt="" width={72} height={72}
+              className="rounded-full mb-4" />
+          </div>
+          <h1 className="font-bold text-xl" style={{ fontFamily: "Syne, sans-serif", color: "var(--text-primary)", animation: "loginFadeUp 0.45s ease-out 0.15s both" }}>
             Portal
           </h1>
-          <p className="text-sm mt-1" style={{ color: "var(--text-muted)" }}>{CLUB_NOMBRE}</p>
+          <p className="text-sm mt-1" style={{ color: "var(--text-muted)", animation: "loginFadeUp 0.45s ease-out 0.25s both" }}>{CLUB_NOMBRE}</p>
         </div>
 
         {/* Form */}
-        <form onSubmit={handleLogin} className="space-y-4" autoComplete="on">
+        <form onSubmit={handleLogin} className="space-y-4" autoComplete="on"
+          style={{ animation: "loginFadeUp 0.45s ease-out 0.35s both" }}>
 
           <div>
             <label className="text-xs uppercase tracking-widest block mb-1.5" style={{ color: "var(--text-secondary)" }}>
@@ -142,6 +145,17 @@ export default function LoginPage() {
           </a>
         </div>
       </div>
+
+      <style jsx>{`
+        @keyframes loginLogoIn {
+          from { opacity: 0; transform: translateY(-18px) scale(0.85); }
+          to   { opacity: 1; transform: translateY(0)     scale(1);    }
+        }
+        @keyframes loginFadeUp {
+          from { opacity: 0; transform: translateY(10px); }
+          to   { opacity: 1; transform: translateY(0);    }
+        }
+      `}</style>
     </div>
   );
 }
