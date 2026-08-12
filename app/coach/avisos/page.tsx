@@ -55,15 +55,6 @@ const EMOJI_COLOR: Record<string, string> = {
 };
 const emojiUniforme = (value: string) => EMOJI_COLOR[value.toLowerCase()] ?? "🔘";
 
-// Contraste simple para texto sobre el color de fondo del botón seleccionado.
-function textoContraste(hex: string): string {
-  const c = hex.replace("#", "");
-  if (c.length !== 6) return "#000000";
-  const r = parseInt(c.slice(0, 2), 16), g = parseInt(c.slice(2, 4), 16), b = parseInt(c.slice(4, 6), 16);
-  const luminancia = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-  return luminancia > 0.6 ? "#000000" : "#ffffff";
-}
-
 const FASES: { value: FasePartido; label: string; emoji?: string }[] = [
   { value: "amistoso",  label: "Amistoso"       },
   { value: "jornada",   label: "Jornada"         },
@@ -388,8 +379,8 @@ export default function AvisosPage() {
               </div>
             )}
 
-            {/* Alta rápida de liga/copa */}
-            {(cats.length <= 1 || catId) && (
+            {/* Alta rápida de liga/copa — solo si el club lleva el módulo Partidos */}
+            {registraPartidos && (cats.length <= 1 || catId) && (
               <div>
                 <label className="text-xs uppercase tracking-widest block mb-1.5" style={{ color: "var(--text-secondary)" }}>
                   Nueva liga / copa <span className="normal-case tracking-normal" style={{ color: "var(--text-muted)" }}>(opcional)</span>
@@ -423,23 +414,25 @@ export default function AvisosPage() {
                   )}
                 </div>
 
-                <div>
-                  <label className="text-xs uppercase tracking-widest block mb-1.5" style={{ color: "var(--text-secondary)" }}>Liga / Copa</label>
-                  <select className={input} value={p.liga_id} onChange={(e) => updatePartido(i, "liga_id", e.target.value)}
-                    style={{ backgroundImage: "none" }}>
-                    <option value="" style={{ background: "var(--bg-alt)" }}>Sin liga</option>
-                    {ligas.map((l) => (
-                      <option key={l.id} value={l.id} style={{ background: "var(--bg-alt)" }}>
-                        {l.tipo === "copa" ? "🏆 " : ""}{l.nombre}
-                      </option>
-                    ))}
-                  </select>
-                  {ligas.length === 0 && (
-                    <p className="text-[11px] mt-1.5" style={{ color: "var(--text-muted)" }}>
-                      Aún no tienes ligas registradas para esta categoría — créala abajo.
-                    </p>
-                  )}
-                </div>
+                {registraPartidos && (
+                  <div>
+                    <label className="text-xs uppercase tracking-widest block mb-1.5" style={{ color: "var(--text-secondary)" }}>Liga / Copa</label>
+                    <select className={input} value={p.liga_id} onChange={(e) => updatePartido(i, "liga_id", e.target.value)}
+                      style={{ backgroundImage: "none" }}>
+                      <option value="" style={{ background: "var(--bg-alt)" }}>Sin liga</option>
+                      {ligas.map((l) => (
+                        <option key={l.id} value={l.id} style={{ background: "var(--bg-alt)" }}>
+                          {l.tipo === "copa" ? "🏆 " : ""}{l.nombre}
+                        </option>
+                      ))}
+                    </select>
+                    {ligas.length === 0 && (
+                      <p className="text-[11px] mt-1.5" style={{ color: "var(--text-muted)" }}>
+                        Aún no tienes ligas registradas para esta categoría — créala abajo.
+                      </p>
+                    )}
+                  </div>
+                )}
 
                 <div>
                   <label className="text-xs uppercase tracking-widest block mb-1.5" style={{ color: "var(--text-secondary)" }}>
@@ -504,11 +497,11 @@ export default function AvisosPage() {
                       const sel = p.uniforme === u.value;
                       return (
                         <button key={u.value} onClick={() => updatePartido(i, "uniforme", u.value)}
-                          className={`flex items-center justify-center gap-2 py-3 rounded-xl border text-sm font-bold transition-all active:scale-95 ${sel ? "" : "link-muted-theme"}`}
-                          style={sel
-                            ? { background: u.color, borderColor: u.color, color: textoContraste(u.color) }
-                            : { borderColor: "var(--border-strong)" }}>
-                          <span className="w-3 h-3 rounded-full flex-shrink-0 border border-black/10" style={{ background: u.color }} />
+                          className={`flex items-center justify-center gap-2 py-3 rounded-xl border-2 text-sm font-bold transition-all active:scale-95 ${
+                            sel ? "border-white text-white" : "link-muted-theme"
+                          }`}
+                          style={sel ? undefined : { borderColor: "var(--border-strong)" }}>
+                          <span className="w-3 h-3 rounded-full flex-shrink-0 border border-white/30" style={{ background: u.color }} />
                           {u.label}
                         </button>
                       );
