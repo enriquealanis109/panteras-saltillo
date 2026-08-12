@@ -4,12 +4,14 @@ import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { PanelTour } from "@/components/admin/PanelTour";
 import { AVISOS_STEPS } from "@/lib/coach-tours";
+import { useClub } from "@/lib/club-context";
 
 type TipoAviso    = "partido" | "cancelacion" | "general";
 type FasePartido  = "amistoso" | "jornada" | "cuartos" | "semifinal" | "final" | "repechaje" | "";
 
 interface Jugador { id: string; nombre: string; alias: string | null }
 interface Liga { id: string; nombre: string; tipo: string }
+interface UniformeOpt { value: string; label: string; color: string }
 
 interface Partido {
   liga_id: string;
@@ -27,10 +29,41 @@ interface Partido {
 }
 
 const DIAS = ["Lunes","Martes","Miércoles","Jueves","Viernes","Sábado","Domingo"];
-const UNIFORMES = [
-  { value: "verde",  label: "Verde",  emoji: "🟢" },
-  { value: "blanco", label: "Blanco", emoji: "⚪" },
+
+const DEFAULT_UNIFORMES: UniformeOpt[] = [
+  { value: "verde",  label: "Verde",  color: "#16a34a" },
+  { value: "blanco", label: "Blanco", color: "#ffffff" },
 ];
+
+// Cada club define los suyos vía NEXT_PUBLIC_CLUB_UNIFORMES,
+// formato "valor:Etiqueta:#hex|valor:Etiqueta:#hex" (ej. Inter: negro/blanco).
+// Sin la env var cae en verde/blanco (Panteras).
+function parseUniformes(): UniformeOpt[] {
+  const raw = process.env.NEXT_PUBLIC_CLUB_UNIFORMES;
+  if (!raw) return DEFAULT_UNIFORMES;
+  const opts = raw.split("|").map((entry) => {
+    const [value, label, color] = entry.split(":");
+    return { value, label, color: color || "#888888" };
+  }).filter((o) => o.value && o.label);
+  return opts.length > 0 ? opts : DEFAULT_UNIFORMES;
+}
+const UNIFORMES = parseUniformes();
+
+const EMOJI_COLOR: Record<string, string> = {
+  verde: "🟢", blanco: "⚪", negro: "⚫", rojo: "🔴", azul: "🔵",
+  amarillo: "🟡", gris: "⚪", morado: "🟣", naranja: "🟠", cafe: "🟤", "café": "🟤",
+};
+const emojiUniforme = (value: string) => EMOJI_COLOR[value.toLowerCase()] ?? "🔘";
+
+// Contraste simple para texto sobre el color de fondo del botón seleccionado.
+function textoContraste(hex: string): string {
+  const c = hex.replace("#", "");
+  if (c.length !== 6) return "#000000";
+  const r = parseInt(c.slice(0, 2), 16), g = parseInt(c.slice(2, 4), 16), b = parseInt(c.slice(4, 6), 16);
+  const luminancia = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+  return luminancia > 0.6 ? "#000000" : "#ffffff";
+}
+
 const FASES: { value: FasePartido; label: string; emoji?: string }[] = [
   { value: "amistoso",  label: "Amistoso"       },
   { value: "jornada",   label: "Jornada"         },
@@ -42,7 +75,7 @@ const FASES: { value: FasePartido; label: string; emoji?: string }[] = [
 
 const DEFAULT_PARTIDO: Partido = {
   liga_id: "", rival: "", fase: "", jornada: "1",
-  dia: "Viernes", horaCita: "16:30", horaJuego: "17:00", lugar: "", uniforme: "verde", nota: "",
+  dia: "Viernes", horaCita: "16:30", horaJuego: "17:00", lugar: "", uniforme: UNIFORMES[0].value, nota: "",
   convocatoria: false, convocados: [],
 };
 
@@ -59,6 +92,10 @@ const nextDate = (dayName: string): string => {
 
 export default function AvisosPage() {
   const router = useRouter();
+  const { modulosActivos } = useClub();
+  // Sin el módulo "partidos" activo, el aviso solo genera el mensaje —
+  // no registra el partido ni crea la lista de asistencia en BD.
+  const registraPartidos = modulosActivos.includes("partidos");
   const [tipo, setTipo] = useState<TipoAviso>("partido");
   const [partidos, setPartidos] = useState<Partido[]>([{ ...DEFAULT_PARTIDO }]);
 
@@ -203,7 +240,7 @@ export default function AvisosPage() {
     lines.push(`Hora: ${fmtHora(p.horaJuego)}`);
     lines.push(`Lugar: ${p.lugar ? p.lugar.toUpperCase() : "[LUGAR]"}`);
     lines.push("");
-    lines.push(`UNIFORME ${uni.label.toUpperCase()} ${uni.emoji}`);
+    lines.push(`UNIFORME ${uni.label.toUpperCase()} ${emojiUniforme(uni.value)}`);
 
     if (p.nota.trim()) {
       lines.push("", `*${p.nota.trim()}*`);
@@ -295,7 +332,7 @@ export default function AvisosPage() {
   };
 
   const enviarWhatsApp = async () => {
-    if (tipo === "partido") await guardarEnBD();
+    if (tipo === "partido" && registraPartidos) await guardarEnBD();
     window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(mensaje)}`, "_blank");
   };
 
@@ -462,21 +499,20 @@ export default function AvisosPage() {
 
                 <div>
                   <label className="text-xs uppercase tracking-widest block mb-1.5" style={{ color: "var(--text-secondary)" }}>Uniforme</label>
-                  <div className="grid grid-cols-2 gap-2">
-                    {UNIFORMES.map((u) => (
-                      <button key={u.value} onClick={() => updatePartido(i, "uniforme", u.value)}
-                        className={`flex items-center justify-center gap-2 py-3 rounded-xl border text-sm font-bold transition-all active:scale-95 ${
-                          p.uniforme === u.value
-                            ? u.value === "verde"
-                              ? "bg-green-600 border-green-600 text-white"
-                              : "bg-white border-white text-black"
-                            : "link-muted-theme"
-                        }`}
-                        style={p.uniforme !== u.value ? { borderColor: "var(--border-strong)" } : undefined}>
-                        <span className={`w-3 h-3 rounded-full flex-shrink-0 ${u.value === "verde" ? "bg-green-400" : "bg-white border border-gray-300"}`} />
-                        {u.label}
-                      </button>
-                    ))}
+                  <div className="grid gap-2" style={{ gridTemplateColumns: `repeat(${UNIFORMES.length}, minmax(0, 1fr))` }}>
+                    {UNIFORMES.map((u) => {
+                      const sel = p.uniforme === u.value;
+                      return (
+                        <button key={u.value} onClick={() => updatePartido(i, "uniforme", u.value)}
+                          className={`flex items-center justify-center gap-2 py-3 rounded-xl border text-sm font-bold transition-all active:scale-95 ${sel ? "" : "link-muted-theme"}`}
+                          style={sel
+                            ? { background: u.color, borderColor: u.color, color: textoContraste(u.color) }
+                            : { borderColor: "var(--border-strong)" }}>
+                          <span className="w-3 h-3 rounded-full flex-shrink-0 border border-black/10" style={{ background: u.color }} />
+                          {u.label}
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
 
@@ -651,7 +687,7 @@ export default function AvisosPage() {
         </div>
 
         {/* Estado guardado */}
-        {tipo === "partido" && (guardado || errGuardado) && (
+        {tipo === "partido" && registraPartidos && (guardado || errGuardado) && (
           <div className={`flex items-center gap-2 px-4 py-3 rounded-xl border text-sm ${
             guardado
               ? "bg-green-500/10 border-green-500/20 text-[var(--status-good)]"
