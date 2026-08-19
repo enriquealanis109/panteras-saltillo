@@ -23,6 +23,16 @@ export interface Pedido         { id: string; cliente_nombre: string; cliente_te
 export interface PedidoItem     { id: string; pedido_id: string; variante_id?: string | null; producto_nombre: string; talla: string; color?: string | null; cantidad: number; precio_unitario: number; personalizacion_nombre?: string | null; personalizacion_numero?: string | null }
 export interface Liga           { id: string; categoria_id: string; nombre: string; tipo: TipoLiga; activo: boolean }
 export interface AsistenciaPartido { id: string; partido_id: string; jugador_id: string; asistio: boolean | null }
+export interface Planeacion {
+  id: string; categoria_id: string; entrenador_id: string; fecha: string;
+  objetivo?: string | null;
+  calentamiento_desc?: string | null; calentamiento_min?: number | null;
+  tecnica_desc?: string | null; tecnica_min?: number | null;
+  tactica_desc?: string | null; tactica_min?: number | null;
+  cierre_desc?: string | null; cierre_min?: number | null;
+  materiales?: string | null;
+  created_at: string; updated_at: string;
+}
 
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;

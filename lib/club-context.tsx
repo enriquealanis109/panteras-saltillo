@@ -7,7 +7,7 @@ export interface ClubBranding { nombre: string; logoUrl: string; colorAcento: st
 /** Módulos "extra" (fuera del núcleo coordinador+coach) que un club puede prender.
  *  Sin ninguno activo, el panel solo trae lo operativo: categorías, jugadores,
  *  entrenadores, documentos, asistencias, evaluaciones. */
-export const MODULOS_OPCIONALES = ["metricas", "partidos", "patrocinadores", "tienda", "padres", "avisos", "sitio_publico"] as const;
+export const MODULOS_OPCIONALES = ["metricas", "partidos", "patrocinadores", "tienda", "padres", "avisos", "sitio_publico", "planeaciones"] as const;
 export type ModuloOpcional = typeof MODULOS_OPCIONALES[number];
 
 export const DEFAULT_BRANDING: ClubBranding = {

@@ -324,6 +324,12 @@ export default function CoachDashboard() {
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" style={{ stroke: "var(--text-secondary)" }} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 000 20"/><path d="M2 12h20"/></svg>
                 <span className="text-[11px] font-semibold" style={{ color: "var(--text-secondary)" }}>Partidos</span>
               </button>
+              <button onClick={() => irOModulo("/coach/planeaciones", "planeaciones", "Planeaciones")}
+                className={`flex flex-col items-center gap-2 py-4 rounded-xl border hover:border-white/15 active:scale-95 transition-all ${!tiene("planeaciones") ? "opacity-40" : ""}`}
+                style={{ background: "var(--bg-surface-1)", borderColor: "var(--border-subtle)" }}>
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" style={{ stroke: "var(--text-secondary)" }} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+                <span className="text-[11px] font-semibold" style={{ color: "var(--text-secondary)" }}>Planeaciones</span>
+              </button>
               {esAdmin && <>
                 <button onClick={() => router.push("/admin")}
                   className="flex flex-col items-center gap-2 py-4 rounded-xl border hover:border-white/15 active:scale-95 transition-all" style={{ background: "var(--bg-surface-1)", borderColor: "var(--border-subtle)" }}>
