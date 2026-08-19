@@ -9,7 +9,8 @@ export type EstadoPedido = "pendiente_pago" | "pagado" | "listo" | "entregado" |
 export type TipoLiga     = "liga" | "copa";
 
 export interface Club           { id: string; nombre: string; slug: string; activo: boolean }
-export interface Categoria      { id: string; nombre: string; club_id: string }
+export type BandaEdad = "menores" | "intermedios" | "mayores";
+export interface Categoria      { id: string; nombre: string; club_id: string; banda_edad?: BandaEdad | null }
 export interface Jugador        { id: string; nombre: string; alias?: string; fecha_nacimiento: string; categoria_id: string; activo: boolean; foto_url?: string | null }
 export interface Asistencia     { id: string; jugador_id: string; entrenador_id: string; fecha: string; estado: Estado; nota?: string }
 export interface Entrenador     { id: string; nombre: string; rol: Rol; club_id: string }
@@ -32,6 +33,16 @@ export interface Planeacion {
   cierre_desc?: string | null; cierre_min?: number | null;
   materiales?: string | null;
   created_at: string; updated_at: string;
+}
+export interface PlantillaPlaneacion {
+  id: string; club_id: string; banda_edad: BandaEdad; semana: number; titulo: string;
+  objetivo?: string | null;
+  calentamiento_desc?: string | null; calentamiento_min?: number | null;
+  tecnica_desc?: string | null; tecnica_min?: number | null;
+  tactica_desc?: string | null; tactica_min?: number | null;
+  cierre_desc?: string | null; cierre_min?: number | null;
+  materiales?: string | null;
+  created_at: string;
 }
 
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;

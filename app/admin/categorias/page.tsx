@@ -1,7 +1,14 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { supabase, authHeaders, type Categoria } from "@/lib/supabase";
+import { supabase, authHeaders, type Categoria, type BandaEdad } from "@/lib/supabase";
+
+const BANDAS: { value: BandaEdad | ""; label: string }[] = [
+  { value: "",             label: "Sin asignar" },
+  { value: "menores",      label: "Menores" },
+  { value: "intermedios",  label: "Intermedios" },
+  { value: "mayores",      label: "Mayores" },
+];
 
 export default function AdminCategoriasPage() {
   const router = useRouter();
@@ -16,6 +23,7 @@ export default function AdminCategoriasPage() {
 
   const [catEditando, setCatEditando] = useState<Categoria | null>(null);
   const [nombreEditar, setNombreEditar] = useState("");
+  const [bandaEditar, setBandaEditar] = useState<BandaEdad | "">("");
   const [savingEdit, setSavingEdit] = useState(false);
   const [errorEdit, setErrorEdit] = useState("");
 
@@ -69,7 +77,7 @@ export default function AdminCategoriasPage() {
 
   const abrirEditar = (cat: Categoria, e: React.MouseEvent) => {
     e.stopPropagation();
-    setCatEditando(cat); setNombreEditar(cat.nombre); setErrorEdit("");
+    setCatEditando(cat); setNombreEditar(cat.nombre); setBandaEditar(cat.banda_edad ?? ""); setErrorEdit("");
   };
 
   const guardarEditar = async () => {
@@ -79,7 +87,7 @@ export default function AdminCategoriasPage() {
     const res = await fetch(`/api/admin/categorias/${catEditando.id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json", ...(await authHeaders()) },
-      body: JSON.stringify({ nombre: nombreEditar.trim() }),
+      body: JSON.stringify({ nombre: nombreEditar.trim(), banda_edad: bandaEditar || null }),
     });
     const data = await res.json();
     if (!res.ok) { setErrorEdit(data.error ?? "Error al editar la categoría."); setSavingEdit(false); return; }
@@ -162,6 +170,16 @@ export default function AdminCategoriasPage() {
                 placeholder="Ej: CAT 2015" autoFocus
                 onKeyDown={(e) => { if (e.key === "Enter") guardarEditar(); }}
                 className="w-full bg-white/[0.06] border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-600 focus:outline-none focus:border-pantera-green/50 transition-colors text-sm" />
+            </div>
+            <div>
+              <label className="text-[10px] text-gray-500 uppercase tracking-widest block mb-1.5">
+                Banda de edad <span className="normal-case tracking-normal text-gray-600">(para el catálogo de planeaciones)</span>
+              </label>
+              <select value={bandaEditar} onChange={(e) => setBandaEditar(e.target.value as BandaEdad | "")}
+                className="w-full bg-white/[0.06] border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-pantera-green/50 transition-colors text-sm"
+                style={{ backgroundImage: "none" }}>
+                {BANDAS.map((b) => <option key={b.value} value={b.value} style={{ background: "#0a0a0a" }}>{b.label}</option>)}
+              </select>
             </div>
             {errorEdit && <p className="text-red-400 text-sm">{errorEdit}</p>}
             <div className="flex gap-2 pt-1">

@@ -6,17 +6,17 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   if ("error" in auth) return auth.error;
   const admin = auth.admin;
 
-  const { nombre } = await req.json();
+  const { nombre, banda_edad } = await req.json();
   if (!nombre?.trim()) {
     return NextResponse.json({ error: "Falta el nombre de la categoría." }, { status: 400 });
   }
 
   const { data, error } = await admin
     .from("categorias")
-    .update({ nombre: nombre.trim() })
+    .update({ nombre: nombre.trim(), banda_edad: banda_edad || null })
     .eq("id", params.id)
     .eq("club_id", auth.clubId)
-    .select("id, nombre")
+    .select("id, nombre, banda_edad")
     .single();
 
   if (error) {
