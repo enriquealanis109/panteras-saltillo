@@ -150,8 +150,19 @@ export default function ReportesPage({ params }: { params: { id: string } }) {
       doc.text(`Generado: ${new Date().toLocaleDateString("es-MX")}`, W / 2, y, { align: "center" });
       y += 9;
 
+      // Resumen general del grupo
+      const pcts = jugadores.map((j) => calcPct(dias.map((d) => getEstado(j.id, d)))).filter((p): p is number => p !== null);
+      const promedioGrupo = pcts.length > 0 ? Math.round(pcts.reduce((s, p) => s + p, 0) / pcts.length) : null;
+      doc.setFillColor(245, 245, 245);
+      doc.roundedRect(margin, y, W - margin * 2, 12, 2, 2, "F");
+      doc.setFont("helvetica", "bold"); doc.setFontSize(11); doc.setTextColor(0, 0, 0);
+      const resumenTxt = `${jugadores.length} jugador${jugadores.length !== 1 ? "es" : ""}`
+        + (promedioGrupo !== null ? `   ·   Asistencia general: ${promedioGrupo}%` : "");
+      doc.text(resumenTxt, W / 2, y + 7.5, { align: "center" });
+      y += 18;
+
       // Tabla
-      const head = [["#", "Jugador", "Lun", "Mar", "Mié", "Jue", "Asistencia"]];
+      const head = [["#", "Jugador", "Lun", "Mar", "Mié", "Jue", "Asist."]];
       const body = jugadores.map((j, idx) => {
         const estados = dias.map((d) => getEstado(j.id, d));
         const pct = calcPct(estados);
@@ -167,16 +178,17 @@ export default function ReportesPage({ params }: { params: { id: string } }) {
         head,
         body,
         startY: y,
-        headStyles: { fillColor: [accentR, accentG, accentB], textColor: 0, fontStyle: "bold", fontSize: 12, valign: "middle" },
+        headStyles: { fillColor: [accentR, accentG, accentB], textColor: 0, fontStyle: "bold", fontSize: 9, valign: "middle" },
         alternateRowStyles: { fillColor: [245, 245, 245] },
-        styles: { fontSize: 13, cellPadding: 5, valign: "middle" },
+        styles: { fontSize: 9.5, cellPadding: 3, valign: "middle" },
         columnStyles: {
-          0: { halign: "center", cellWidth: 12, cellPadding: { top: 5, bottom: 5, left: 1, right: 1 } },
-          2: { halign: "center" },
-          3: { halign: "center" },
-          4: { halign: "center" },
-          5: { halign: "center" },
-          6: { halign: "center", fontStyle: "bold" },
+          0: { halign: "center", cellWidth: 8, cellPadding: { top: 3, bottom: 3, left: 1, right: 1 } },
+          1: { cellWidth: 68 },
+          2: { halign: "center", cellWidth: 16 },
+          3: { halign: "center", cellWidth: 16 },
+          4: { halign: "center", cellWidth: 16 },
+          5: { halign: "center", cellWidth: 16 },
+          6: { halign: "center", cellWidth: 22, fontStyle: "bold" },
         },
       });
 

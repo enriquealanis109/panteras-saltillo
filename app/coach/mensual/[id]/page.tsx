@@ -154,11 +154,22 @@ export default function MensualPage({ params }: { params: { id: string } }) {
       doc.setFontSize(9);
       doc.setTextColor(100, 100, 100);
       doc.text(`Generado: ${new Date().toLocaleDateString("es-MX")}`, W / 2, y, { align: "center" });
-      y += 9;
+      y += 8;
+
+      // Resumen general del grupo
+      const conPct = resumenes.filter((r) => r.pct !== null);
+      const promedioGrupo = conPct.length > 0 ? Math.round(conPct.reduce((s, r) => s + r.pct!, 0) / conPct.length) : null;
+      doc.setFillColor(245, 245, 245);
+      doc.roundedRect(margin, y, W - margin * 2, 12, 2, 2, "F");
+      doc.setFont("helvetica", "bold"); doc.setFontSize(11); doc.setTextColor(0, 0, 0);
+      const resumenTxt = `${resumenes.length} jugador${resumenes.length !== 1 ? "es" : ""}`
+        + (promedioGrupo !== null ? `   ·   Asistencia general: ${promedioGrupo}%` : "");
+      doc.text(resumenTxt, W / 2, y + 7.5, { align: "center" });
+      y += 18;
 
       autoTable(doc, {
         startY: y,
-        head: [["#", "Jugador", "Clases", "Presente", "Tarde", "Permiso", "Ausente", "Asistencia"]],
+        head: [["#", "Jugador", "Clases", "Pres.", "Tarde", "Perm.", "Aus.", "Asist."]],
         body: resumenes.map((r, i) => [
           i + 1,
           r.jugador.alias ? `${r.jugador.nombre} "${r.jugador.alias}"` : r.jugador.nombre,
@@ -169,14 +180,18 @@ export default function MensualPage({ params }: { params: { id: string } }) {
           r.ausente,
           r.pct !== null ? `${r.pct}%` : "—",
         ]),
-        headStyles: { fillColor: [accentR, accentG, accentB], textColor: 0, fontStyle: "bold", fontSize: 12, valign: "middle" },
+        headStyles: { fillColor: [accentR, accentG, accentB], textColor: 0, fontStyle: "bold", fontSize: 9, valign: "middle" },
         alternateRowStyles: { fillColor: [245, 245, 245] },
-        styles: { fontSize: 13, cellPadding: 5, valign: "middle" },
+        styles: { fontSize: 9.5, cellPadding: 3, valign: "middle" },
         columnStyles: {
-          0: { halign: "center", cellWidth: 12, cellPadding: { top: 5, bottom: 5, left: 1, right: 1 } },
-          2: { halign: "center" }, 3: { halign: "center" },
-          4: { halign: "center" }, 5: { halign: "center" },
-          6: { halign: "center" }, 7: { halign: "center", fontStyle: "bold" },
+          0: { halign: "center", cellWidth: 8, cellPadding: { top: 3, bottom: 3, left: 1, right: 1 } },
+          1: { cellWidth: 48 },
+          2: { halign: "center", cellWidth: 17 },
+          3: { halign: "center", cellWidth: 19 },
+          4: { halign: "center", cellWidth: 16 },
+          5: { halign: "center", cellWidth: 17 },
+          6: { halign: "center", cellWidth: 17 },
+          7: { halign: "center", cellWidth: 22, fontStyle: "bold" },
         },
       });
 
