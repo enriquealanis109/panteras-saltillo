@@ -1,12 +1,22 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
-import { supabase, authHeaders, type Mensaje, type Rol } from "@/lib/supabase";
+import { supabase, authHeaders, type Mensaje, type Rol, type TipoMensaje } from "@/lib/supabase";
 import { useClub } from "@/lib/club-context";
 import toast from "react-hot-toast";
 
 interface CoachRow { id: string; nombre: string; conversacion_id: string | null; ultimo_texto: string; no_leidos: number; ultimo_at: string }
 
 const fmtHora = (iso: string) => new Date(iso).toLocaleTimeString("es-MX", { hour: "numeric", minute: "2-digit" });
+const MAX_MB = 10;
+
+function CheckIcon({ doble }: { doble: boolean }) {
+  return (
+    <svg width="14" height="14" viewBox="0 0 16 16" fill="none" className={doble ? "opacity-100" : "opacity-60"}>
+      <path d="M1 8.5l3 3L10 5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
+      {doble && <path d="M5.5 8.5l3 3L15 5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>}
+    </svg>
+  );
+}
 
 export default function ChatWidget() {
   const { modulosActivos } = useClub();
@@ -22,8 +32,14 @@ export default function ChatWidget() {
   const [mensajes, setMensajes] = useState<Mensaje[]>([]);
   const [texto, setTexto] = useState("");
   const [enviando, setEnviando] = useState(false);
+  const [subiendo, setSubiendo] = useState(false);
   const [notifOk, setNotifOk] = useState(true);
+  const [otroEscribiendo, setOtroEscribiendo] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const typingChannelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
+  const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastTypingSentRef = useRef(0);
 
   const esAdmin = yo?.rol === "admin";
   const conversacionActivaId = esAdmin ? coachActivo?.conversacion_id ?? null : miConversacionId;
@@ -66,13 +82,13 @@ export default function ChatWidget() {
     (convs ?? []).forEach((c) => { convMap[c.entrenador_id] = c; });
 
     const convIds = (convs ?? []).map((c) => c.id);
-    let ultimosPorConv: Record<string, { texto: string; created_at: string }> = {};
+    let ultimosPorConv: Record<string, { texto: string; tipo: TipoMensaje; created_at: string }> = {};
     let noLeidosPorConv: Record<string, number> = {};
     if (convIds.length > 0) {
-      const { data: msgs } = await supabase.from("mensajes").select("conversacion_id, texto, created_at, leido_por_admin, autor_id")
+      const { data: msgs } = await supabase.from("mensajes").select("conversacion_id, texto, tipo, created_at, leido_por_admin, autor_id, eliminado")
         .in("conversacion_id", convIds).order("created_at", { ascending: true });
       (msgs ?? []).forEach((m) => {
-        ultimosPorConv[m.conversacion_id] = { texto: m.texto, created_at: m.created_at };
+        ultimosPorConv[m.conversacion_id] = { texto: m.eliminado ? "Mensaje eliminado" : (m.tipo === "imagen" ? "📷 Foto" : m.tipo === "documento" ? "📎 Documento" : m.texto), tipo: m.tipo, created_at: m.created_at };
         if (!m.leido_por_admin && m.autor_id !== yo.id) {
           noLeidosPorConv[m.conversacion_id] = (noLeidosPorConv[m.conversacion_id] ?? 0) + 1;
         }
@@ -110,7 +126,7 @@ export default function ChatWidget() {
     load();
   }, [conversacionActivaId, yo, esAdmin]); // eslint-disable-line
 
-  // ── Realtime: mensajes nuevos ──
+  // ── Realtime: mensajes nuevos + actualizados (leído / eliminado) ──
   useEffect(() => {
     if (!yo) return;
     const channel = supabase
@@ -128,6 +144,12 @@ export default function ChatWidget() {
           else setNoLeidosTotal((n) => n + 1);
         }
       })
+      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "mensajes" }, (payload) => {
+        const act = payload.new as Mensaje;
+        if (act.conversacion_id === conversacionActivaId) {
+          setMensajes((prev) => prev.map((m) => (m.id === act.id ? act : m)));
+        }
+      })
       .subscribe();
     return () => { supabase.removeChannel(channel); };
   }, [yo, conversacionActivaId, abierto, esAdmin]); // eslint-disable-line
@@ -140,7 +162,33 @@ export default function ChatWidget() {
       .then(({ count }) => setNoLeidosTotal(count ?? 0));
   }, [yo, esAdmin, miConversacionId]);
 
-  useEffect(() => { scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" }); }, [mensajes]);
+  useEffect(() => { scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" }); }, [mensajes, otroEscribiendo]);
+
+  // ── "Escribiendo..." — canal efímero por conversación, no se guarda en BD ──
+  useEffect(() => {
+    setOtroEscribiendo(false);
+    if (!conversacionActivaId) { typingChannelRef.current = null; return; }
+    const channel = supabase.channel(`typing-${conversacionActivaId}`, { config: { broadcast: { self: false } } });
+    channel.on("broadcast", { event: "typing" }, () => {
+      setOtroEscribiendo(true);
+      if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+      typingTimeoutRef.current = setTimeout(() => setOtroEscribiendo(false), 3000);
+    }).subscribe();
+    typingChannelRef.current = channel;
+    return () => {
+      supabase.removeChannel(channel);
+      if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+    };
+  }, [conversacionActivaId]);
+
+  const onCambioTexto = (v: string) => {
+    setTexto(v);
+    const now = Date.now();
+    if (now - lastTypingSentRef.current > 2000) {
+      lastTypingSentRef.current = now;
+      typingChannelRef.current?.send({ type: "broadcast", event: "typing", payload: {} });
+    }
+  };
 
   // ── Estado de notificaciones ──
   useEffect(() => {
@@ -175,6 +223,16 @@ export default function ChatWidget() {
     }
   };
 
+  const avisarNuevoMensaje = async (cuerpoPreview: string) => {
+    if (!conversacionActivaId) return;
+    const headers = await authHeaders();
+    fetch("/api/notificar-chat", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...headers },
+      body: JSON.stringify({ conversacion_id: conversacionActivaId, texto: cuerpoPreview }),
+    }).catch(() => {});
+  };
+
   const enviar = async () => {
     if (!texto.trim() || !yo || !conversacionActivaId || enviando) return;
     setEnviando(true);
@@ -184,18 +242,57 @@ export default function ChatWidget() {
       conversacion_id: conversacionActivaId,
       autor_id: yo.id,
       texto: cuerpo,
+      tipo: "texto",
       leido_por_coach: !esAdmin,
       leido_por_admin: esAdmin,
     });
     if (!error) {
       await supabase.from("conversaciones").update({ ultimo_mensaje_at: new Date().toISOString() }).eq("id", conversacionActivaId);
-      fetch("/api/notificar-chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", ...(await authHeaders()) },
-        body: JSON.stringify({ conversacion_id: conversacionActivaId, texto: cuerpo }),
-      }).catch(() => {});
+      avisarNuevoMensaje(cuerpo);
+    } else {
+      toast.error("No se pudo enviar el mensaje.");
     }
     setEnviando(false);
+  };
+
+  const onFileSelected = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file || !yo || !conversacionActivaId) return;
+    if (file.size > MAX_MB * 1024 * 1024) { toast.error(`El archivo no puede pesar más de ${MAX_MB}MB.`); return; }
+
+    setSubiendo(true);
+    const tipo: TipoMensaje = file.type.startsWith("image/") ? "imagen" : "documento";
+    const ext = file.name.split(".").pop() ?? "bin";
+    const path = `${conversacionActivaId}/${Date.now()}.${ext}`;
+
+    const { error: upErr } = await supabase.storage.from("chat").upload(path, file, { contentType: file.type || "application/octet-stream" });
+    if (upErr) { toast.error("No se pudo subir el archivo."); setSubiendo(false); return; }
+    const url = supabase.storage.from("chat").getPublicUrl(path).data.publicUrl;
+
+    const cuerpo = texto.trim();
+    setTexto("");
+    const { error } = await supabase.from("mensajes").insert({
+      conversacion_id: conversacionActivaId,
+      autor_id: yo.id,
+      texto: cuerpo,
+      tipo, archivo_url: url, archivo_nombre: file.name,
+      leido_por_coach: !esAdmin,
+      leido_por_admin: esAdmin,
+    });
+    if (!error) {
+      await supabase.from("conversaciones").update({ ultimo_mensaje_at: new Date().toISOString() }).eq("id", conversacionActivaId);
+      avisarNuevoMensaje(tipo === "imagen" ? "📷 Foto" : `📎 ${file.name}`);
+    } else {
+      toast.error("No se pudo enviar el archivo.");
+    }
+    setSubiendo(false);
+  };
+
+  const eliminarMensaje = async (id: string) => {
+    const { error } = await supabase.from("mensajes").update({ eliminado: true }).eq("id", id);
+    if (error) { toast.error("No se pudo eliminar el mensaje."); return; }
+    setMensajes((prev) => prev.map((m) => (m.id === id ? { ...m, eliminado: true } : m)));
   };
 
   const abrirConCoach = async (c: CoachRow) => {
@@ -229,7 +326,7 @@ export default function ChatWidget() {
       )}
 
       {abierto && (
-        <div className="w-[92vw] max-w-sm h-[70vh] max-h-[520px] rounded-2xl border shadow-2xl flex flex-col overflow-hidden"
+        <div className="w-[92vw] max-w-sm h-[70vh] max-h-[560px] rounded-2xl border shadow-2xl flex flex-col overflow-hidden"
           style={{ background: "var(--bg-alt)", borderColor: "var(--border-subtle)" }}>
 
           <header className="px-4 py-3 flex items-center justify-between border-b bg-pantera-green" style={{ borderColor: "var(--border-subtle)" }}>
@@ -286,21 +383,73 @@ export default function ChatWidget() {
                   </p>
                 ) : mensajes.map((m) => {
                   const esMio = m.autor_id === yo.id;
+                  const otroLeyo = esAdmin ? m.leido_por_coach : m.leido_por_admin;
                   return (
                     <div key={m.id} className={`flex ${esMio ? "justify-end" : "justify-start"}`}>
                       <div className={`max-w-[80%] rounded-2xl px-3 py-2 ${esMio ? "bg-pantera-green text-white" : ""}`}
                         style={!esMio ? { background: "var(--bg-surface-1)", color: "var(--text-primary)" } : undefined}>
-                        <p className="text-sm whitespace-pre-wrap break-words">{m.texto}</p>
-                        <p className={`text-[10px] mt-0.5 ${esMio ? "text-white/70" : ""}`} style={!esMio ? { color: "var(--text-muted)" } : undefined}>
-                          {fmtHora(m.created_at)}
-                        </p>
+                        {m.eliminado ? (
+                          <p className="text-sm italic opacity-70">Mensaje eliminado</p>
+                        ) : (
+                          <>
+                            {m.tipo === "imagen" && m.archivo_url && (
+                              <a href={m.archivo_url} target="_blank" rel="noreferrer">
+                                <img src={m.archivo_url} alt="" className="rounded-lg max-w-full max-h-52 object-cover mb-1" />
+                              </a>
+                            )}
+                            {m.tipo === "documento" && m.archivo_url && (
+                              <a href={m.archivo_url} target="_blank" rel="noreferrer"
+                                className={`flex items-center gap-2 rounded-lg px-2 py-2 mb-1 ${esMio ? "bg-white/15" : ""}`}
+                                style={!esMio ? { background: "var(--bg-surface-2)" } : undefined}>
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="flex-shrink-0">
+                                  <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/>
+                                </svg>
+                                <span className="text-xs truncate">{m.archivo_nombre}</span>
+                              </a>
+                            )}
+                            {m.texto && <p className="text-sm whitespace-pre-wrap break-words">{m.texto}</p>}
+                          </>
+                        )}
+                        <div className="flex items-center gap-1 justify-end mt-0.5">
+                          {esMio && !m.eliminado && (
+                            <button onClick={() => eliminarMensaje(m.id)} title="Eliminar"
+                              className={`mr-0.5 ${esMio ? "text-white/60 hover:text-white" : ""}`}>
+                              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/>
+                              </svg>
+                            </button>
+                          )}
+                          <p className={`text-[10px] ${esMio ? "text-white/70" : ""}`} style={!esMio ? { color: "var(--text-muted)" } : undefined}>
+                            {fmtHora(m.created_at)}
+                          </p>
+                          {esMio && <CheckIcon doble={!!otroLeyo} />}
+                        </div>
                       </div>
                     </div>
                   );
                 })}
+                {otroEscribiendo && (
+                  <div className="flex justify-start">
+                    <div className="rounded-2xl px-3 py-2 text-xs italic" style={{ background: "var(--bg-surface-1)", color: "var(--text-muted)" }}>
+                      Escribiendo...
+                    </div>
+                  </div>
+                )}
               </div>
               <div className="p-2.5 border-t flex items-center gap-2" style={{ borderColor: "var(--border-subtle)" }}>
-                <input value={texto} onChange={(e) => setTexto(e.target.value)}
+                <input ref={fileInputRef} type="file" accept="image/*,application/pdf,.doc,.docx,.xls,.xlsx" className="hidden" onChange={onFileSelected} />
+                <button onClick={() => fileInputRef.current?.click()} disabled={subiendo}
+                  title="Adjuntar archivo"
+                  className="flex-shrink-0 w-9 h-9 rounded-full flex items-center justify-center link-muted-theme disabled:opacity-40 transition-colors">
+                  {subiendo ? (
+                    <div className="w-4 h-4 border-2 border-pantera-green border-t-transparent rounded-full animate-spin" />
+                  ) : (
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/>
+                    </svg>
+                  )}
+                </button>
+                <input value={texto} onChange={(e) => onCambioTexto(e.target.value)}
                   onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); enviar(); } }}
                   placeholder="Escribe un mensaje..."
                   className="flex-1 min-w-0 bg-transparent border rounded-full px-4 py-2 text-sm focus:outline-none focus:border-pantera-green/50"

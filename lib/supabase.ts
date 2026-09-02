@@ -45,9 +45,11 @@ export interface PlantillaPlaneacion {
   created_at: string;
 }
 export interface Conversacion { id: string; club_id: string; entrenador_id: string; ultimo_mensaje_at: string; created_at: string }
+export type TipoMensaje = "texto" | "imagen" | "documento";
 export interface Mensaje {
   id: string; conversacion_id: string; club_id: string; autor_id: string; texto: string;
   leido_por_coach: boolean; leido_por_admin: boolean; created_at: string;
+  tipo: TipoMensaje; archivo_url?: string | null; archivo_nombre?: string | null; eliminado: boolean;
 }
 
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
