@@ -44,8 +44,13 @@ export default function ChatWidget() {
     const ensure = async () => {
       const { data: existente } = await supabase.from("conversaciones").select("id").eq("entrenador_id", yo.id).maybeSingle();
       if (existente) { setMiConversacionId(existente.id); return; }
-      const { data: creada } = await supabase.from("conversaciones").insert({ entrenador_id: yo.id }).select("id").single();
-      if (creada) setMiConversacionId(creada.id);
+      const { data: creada, error } = await supabase.from("conversaciones").insert({ entrenador_id: yo.id }).select("id").single();
+      if (creada) { setMiConversacionId(creada.id); return; }
+      // Carrera: alguien más (ej. el admin) la creó justo antes — la buscamos de nuevo.
+      if (error) {
+        const { data: retry } = await supabase.from("conversaciones").select("id").eq("entrenador_id", yo.id).maybeSingle();
+        if (retry) setMiConversacionId(retry.id);
+      }
     };
     ensure();
   }, [yo, esAdmin]);
@@ -190,8 +195,12 @@ export default function ChatWidget() {
 
   const abrirConCoach = async (c: CoachRow) => {
     if (!c.conversacion_id) {
-      const { data } = await supabase.from("conversaciones").insert({ entrenador_id: c.id }).select("id").single();
-      if (data) c = { ...c, conversacion_id: data.id };
+      const { data, error } = await supabase.from("conversaciones").insert({ entrenador_id: c.id }).select("id").single();
+      if (data) { c = { ...c, conversacion_id: data.id }; }
+      else if (error) {
+        const { data: retry } = await supabase.from("conversaciones").select("id").eq("entrenador_id", c.id).maybeSingle();
+        if (retry) c = { ...c, conversacion_id: retry.id };
+      }
     }
     setCoachActivo(c);
   };
