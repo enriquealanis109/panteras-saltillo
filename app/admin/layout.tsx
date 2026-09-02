@@ -7,6 +7,7 @@ import Link from "next/link";
 import { PanelTour } from "@/components/admin/PanelTour";
 import { ADMIN_TOURS } from "@/lib/admin-tours";
 import { ClubContext, DEFAULT_BRANDING, hexToRgbTriplet, type ClubBranding, type ModuloOpcional } from "@/lib/club-context";
+import ChatWidget from "@/components/chat/ChatWidget";
 
 const NAV: { href: string; label: string; icon: React.ReactNode; modulo?: ModuloOpcional }[] = [
   {
@@ -441,6 +442,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           />
         </div>
       )}
+
+      <ChatWidget />
     </div>
     </ClubContext.Provider>
   );

@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { ClubProvider } from "@/lib/club-context";
+import ChatWidget from "@/components/chat/ChatWidget";
 
 const PUBLIC_PATHS = ["/coach/login"];
 
@@ -34,5 +35,10 @@ export default function CoachLayout({ children }: { children: React.ReactNode })
     );
   }
 
-  return <ClubProvider clubId={clubId}>{children}</ClubProvider>;
+  return (
+    <ClubProvider clubId={clubId}>
+      {children}
+      {!PUBLIC_PATHS.includes(pathname) && <ChatWidget />}
+    </ClubProvider>
+  );
 }
