@@ -235,14 +235,24 @@ export default function EvaluarJugadorPage({ params }: { params: { id: string; j
       doc.setFont("helvetica", "normal"); doc.setFontSize(7.5); doc.setTextColor(80,80,80);
       doc.text("1=Excelente  |  2=Muy Bien  |  3=Bien  |  4=Satisfactorio/Proceso de Avance  |  5=Requiere Mayor Apoyo", margin, y3);
 
-      const y4 = y3 + 6;
+      doc.setFont("helvetica", "normal"); doc.setFontSize(8.5);
+      const lines = doc.splitTextToSize(ev.observaciones || "Sin observaciones.", W - margin * 2);
+      const alturaObs = lines.length * 4;
+
+      // Si observaciones + firmas no caben en lo que queda de la página,
+      // todo ese bloque se mueve a una página nueva en vez de encimarse.
+      let y4 = y3 + 6;
+      if (y4 + 5 + alturaObs + 20 > 283) {
+        doc.addPage();
+        y4 = 20;
+      }
+
       doc.setTextColor(0,0,0); doc.setFont("helvetica", "bold"); doc.setFontSize(9);
       doc.text("OBSERVACIONES:", margin, y4);
       doc.setFont("helvetica", "normal"); doc.setFontSize(8.5);
-      const lines = doc.splitTextToSize(ev.observaciones || "Sin observaciones.", W - margin * 2);
       doc.text(lines, margin, y4 + 5);
 
-      const y5 = Math.min(y4 + 5 + lines.length * 4 + 15, 250);
+      const y5 = y4 + 5 + alturaObs + 15;
       const firmaW = 55;
       // La firma del director deportivo es específica de Panteras — otros
       // clubes (NEXT_PUBLIC_CLUB_NOMBRE seteado) solo llevan padre/entrenador.
