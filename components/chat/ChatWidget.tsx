@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState } from "react";
 import { supabase, authHeaders, type Mensaje, type Rol } from "@/lib/supabase";
 import { useClub } from "@/lib/club-context";
+import toast from "react-hot-toast";
 
 interface CoachRow { id: string; nombre: string; conversacion_id: string | null; ultimo_texto: string; no_leidos: number; ultimo_at: string }
 
@@ -153,7 +154,7 @@ export default function ChatWidget() {
     const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
     const isPWA = (navigator as any).standalone === true || window.matchMedia("(display-mode: standalone)").matches;
     if (isIOS && !isPWA) {
-      alert("En iPhone, primero agrega esta app a tu pantalla de inicio (Compartir → Agregar a pantalla de inicio) para poder activar notificaciones.");
+      toast("En iPhone, primero agrega esta app a tu pantalla de inicio (Compartir → Agregar a pantalla de inicio) para poder activar notificaciones.");
       return;
     }
     if (!("Notification" in window) || !("serviceWorker" in navigator)) return;
@@ -165,9 +166,13 @@ export default function ChatWidget() {
         userVisibleOnly: true,
         applicationServerKey: process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY,
       });
-      await supabase.from("push_subscriptions").insert({ entrenador_id: yo.id, subscription: sub.toJSON() });
+      const { error } = await supabase.from("push_subscriptions").insert({ entrenador_id: yo.id, subscription: sub.toJSON() });
+      if (error) { toast.error("No se pudo activar la notificación. Inténtalo de nuevo o avisa al administrador."); return; }
       setNotifOk(true);
-    } catch { /* silencioso */ }
+      toast.success("Notificaciones activadas");
+    } catch {
+      toast.error("No se pudo activar la notificación en este navegador.");
+    }
   };
 
   const enviar = async () => {
